@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card card-glow-cyan">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🎛️</span>
+          <span>BẢNG CHIẾN THUẬT & TRIẾT LÝ BÓNG ĐÁ (TACTICAL BOARD)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Lựa chọn sơ đồ đội hình, tư duy tiếp cận trận đấu, cự ly đội hình và phong cách chuyền bóng.
+        </p>
+      </div>
+
+      <a class="button primary" href="{{ url_for('lineup') }}">
+        🧲 Kéo thả 11 cầu thủ trên sân →
+      </a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: FORM CONTROLS -->
+    <div class="col-7">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">⚙️</span>
+            <span>THIẾT LẬP CHIẾN THUẬT</span>
+          </div>
+        </div>
+
+        <form method="post">
+          <div class="formgrid">
+            <!-- Formation -->
+            <div class="fcol-6">
+              <label>⚽ Sơ đồ chiến thuật</label>
+              <select name="formation" style="font-size: 15px; font-weight: 700;">
+                {% for f in ["4-4-2","4-3-3","4-2-3-1","3-5-2","5-3-2"] %}
+                  <option value="{{ f }}" {% if club.formation == f %}selected{% endif %}>{{ f }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Mentality -->
+            <div class="fcol-6">
+              <label>🧠 Tư duy chiến thuật (Mentality)</label>
+              <select name="mentality" style="font-size: 15px; font-weight: 700;">
+                <option value="defensive" {% if club.mentality == "defensive" %}selected{% endif %}>🛡️ Phòng ngự chặt</option>
+                <option value="balanced" {% if club.mentality == "balanced" %}selected{% endif %}>⚖️ Cân bằng</option>
+                <option value="attacking" {% if club.mentality == "attacking" %}selected{% endif %}>⚔️ Tấn công tổng lực</option>
+              </select>
+            </div>
+
+            <!-- Pressing -->
+            <div class="fcol-6">
+              <label>⚡ Cường độ Pressing</label>
+              <select name="pressing" style="font-size: 15px; font-weight: 700;">
+                <option value="low" {% if club.pressing == "low" %}selected{% endif %}>🟢 Thấp (Tiết kiệm thể lực)</option>
+                <option value="normal" {% if club.pressing == "normal" %}selected{% endif %}>🟡 Vừa phải</option>
+                <option value="high" {% if club.pressing == "high" %}selected{% endif %}>🔴 Cao (Áp sát toàn sân)</option>
+              </select>
+            </div>
+
+            <!-- Passing -->
+            <div class="fcol-6">
+              <label>👟 Lối chuyền bóng (Passing Style)</label>
+              <select name="passing" style="font-size: 15px; font-weight: 700;">
+                <option value="short" {% if club.passing == "short" %}selected{% endif %}>📐 Chuyền ngắn (Kiểm soát Tiki-taka)</option>
+                <option value="long" {% if club.passing == "long" %}selected{% endif %}>🚀 Chuyền dài (Phản công nhanh)</option>
+              </select>
+            </div>
+
+            <div class="fcol-12" style="margin-top: 10px;">
+              <button class="button primary pulse" type="submit" style="width: 100%; padding: 12px; font-size: 16px;">
+                💾 LƯU TRIẾT LÝ CHIẾN THUẬT
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RIGHT: TACTICAL ADVICE & OVERVIEW -->
+    <div class="col-5">
+      <div class="card" style="background: linear-gradient(135deg, rgba(23, 37, 84, 0.6), rgba(15, 23, 42, 0.9)); border-color: rgba(0, 240, 255, 0.3);">
+        <div class="card-title" style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 12px;">
+          <span class="icon">📋</span>
+          <span>TÁC ĐỘNG CHIẾN THUẬT</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; color: var(--text-muted);">
+          <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 10px; border-left: 3px solid var(--accent-cyan);">
+            <b style="color: #fff;">Sơ đồ hiện tại: {{ club.formation }}</b>
+            <p style="margin: 4px 0 0;">Xác định số lượng vị trí trên sân. Sau khi đổi sơ đồ, hãy vào mục <b>Đá chính</b> để điều chỉnh 11 cầu thủ.</p>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 10px; border-left: 3px solid var(--accent-gold);">
+            <b style="color: #fff;">Tư duy & Pressing:</b>
+            <p style="margin: 4px 0 0;">Pressing cao giúp cướp bóng nhanh nhưng tiêu hao thể lực gấp đôi và dễ dính chấn thương hơn.</p>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 10px; border-left: 3px solid var(--accent-green);">
+            <b style="color: #fff;">Chuyền bóng:</b>
+            <p style="margin: 4px 0 0;">Chuyền ngắn phù hợp khi sở hữu hàng tiền vệ kỹ thuật cao. Chuyền dài phát huy sức mạnh khi tiền đạo có tốc độ vượt trội.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

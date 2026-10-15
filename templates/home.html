@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- MATCHDAY HERO BROADCAST BANNER -->
+  {% if fixtures|length > 0 %}
+    {% set next_fix = fixtures[0] %}
+    <div class="fixture-clash-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="badge cyan">🏆 {{ next_fix.competition }} • {{ next_fix.round }}</span>
+        {% if next_fix.played %}
+          <span class="badge good">ĐÃ KẾT THÚC</span>
+        {% else %}
+          <span class="badge warn">TRẬN ĐẤU HÔM NAY</span>
+        {% endif %}
+      </div>
+
+      <div class="clash-teams">
+        <div class="clash-team home">
+          <div class="clash-crest">⚽</div>
+          <div class="clash-name">{{ next_fix.home }}</div>
+          <span class="badge" style="margin-top: 4px;">Chủ nhà</span>
+        </div>
+
+        <div style="text-align: center;">
+          {% if next_fix.played %}
+            <div class="clash-score">{{ next_fix.home_goals }} - {{ next_fix.away_goals }}</div>
+            <div class="muted" style="font-size: 12px; margin-top: 4px;">FT (Full-time)</div>
+          {% else %}
+            <div class="clash-vs">VS</div>
+            <div style="margin-top: 8px;">
+              <a class="button primary pulse" href="{{ url_for('competitions') }}">
+                ⚔️ ĐÁ TRẬN NÀY
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="clash-team away">
+          <div class="clash-crest">🛡️</div>
+          <div class="clash-name">{{ next_fix.away }}</div>
+          <span class="badge" style="margin-top: 4px;">Khách</span>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.6));">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h2>⚽ HÔM NAY NGHỈ THI ĐẤU</h2>
+          <p class="muted">Không có trận đấu chính thức nào trong ngày {{ club.season_day }}. Bạn có thể tập luyện, mua sắm hoặc sang ngày tiếp theo.</p>
+        </div>
+        <div class="row">
+          <form method="post" action="{{ url_for('do_advance_day') }}">
+            <button class="button primary pulse" type="submit">⏭️ Sang ngày thi đấu tiếp</button>
+          </form>
+          <a class="button secondary" href="{{ url_for('friendly') }}">🤝 Đá giao hữu</a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- MAIN DASHBOARD GRID -->
+  <div class="grid">
+    <!-- LEFT COLUMN: CLUB STATS & TODAY SCHEDULE -->
+    <div class="col-8">
+      <!-- CLUB POWER & INFRASTRUCTURE STATS -->
+      <div class="card card-glow-cyan">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📊</span>
+            <span>CHỈ SỐ & CƠ SỞ VẬT CHẤT CLB</span>
+          </div>
+          <span class="ovr-shield ovr-gold" title="OVR Đội Hình Trung Bình">{{ "%.0f"|format(avg_rating) }}</span>
+        </div>
+
+        <div class="grid" style="gap: 12px;">
+          <div class="col-4">
+            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
+              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Rating Trung Bình</div>
+              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-gold); margin-top: 2px;">
+                ⭐ {{ "%.1f"|format(avg_rating) }}
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
+              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Sức Chứa Sân</div>
+              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-cyan); margin-top: 2px;">
+                🏟️ {{ effects.capacity }}
+              </div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
+              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Tốc Độ Tập Luyện</div>
+              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-green); margin-top: 2px;">
+                ⚡ x{{ "%.2f"|format(effects.train_gain_mult) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 14px; gap: 8px;">
+          <span class="badge good">🛡️ Giảm chấn thương (trận): <b>x{{ "%.2f"|format(effects.match_injury_mult) }}</b></span>
+          <span class="badge good">🛡️ Giảm chấn thương (tập): <b>x{{ "%.2f"|format(effects.train_injury_mult) }}</b></span>
+          <span class="badge cyan">💊 Hồi phục y tế: <b>x{{ "%.2f"|format(effects.injury_days_mult) }}</b></span>
+        </div>
+
+        <div class="row" style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px; justify-content: space-between;">
+          <div class="row">
+            <form method="post" action="{{ url_for('do_advance_day') }}">
+              <button class="button primary" type="submit">⏭️ Sang ngày mới</button>
+            </form>
+            <a class="button secondary" href="{{ url_for('competitions') }}">📅 Xem giải đấu</a>
+          </div>
+
+          <form method="post" action="{{ url_for('reset_season') }}" onsubmit="return confirm('Reset mùa giải sẽ xóa lịch thi đấu hiện tại và tạo mới hoàn toàn. Bạn chắc chắn muốn reset?');">
+            <button class="button danger" type="submit" style="font-size: 13px; padding: 7px 12px;">🔄 Reset mùa giải</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TODAY FIXTURES SCHEDULE LIST -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📅</span>
+            <span>LỊCH THI ĐẤU HÔM NAY (NGÀY {{ club.season_day }})</span>
+          </div>
+          <a class="badge cyan" href="{{ url_for('competitions') }}">Chi tiết & Bảng xếp hạng →</a>
+        </div>
+
+        {% if fixtures|length == 0 %}
+          <p class="muted" style="padding: 16px 0; text-align: center;">Không có trận đấu nào trong hôm nay. Bấm "Sang ngày" để tiến tới lịch thi đấu tiếp theo.</p>
+        {% else %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Giải đấu</th>
+                  <th>Vòng</th>
+                  <th>Cặp đấu</th>
+                  <th>Trạng thái</th>
+                  <th style="text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for f in fixtures %}
+                  <tr>
+                    <td><span class="badge cyan">{{ f.competition }}</span></td>
+                    <td><span class="badge">{{ f.round }}</span></td>
+                    <td>
+                      <b>{{ f.home }}</b>
+                      <span style="color: var(--text-dim); margin: 0 4px;">vs</span>
+                      <b>{{ f.away }}</b>
+                    </td>
+                    <td>
+                      {% if f.played %}
+                        <span class="badge good">Đã đá: {{ f.home_goals }} - {{ f.away_goals }}</span>
+                      {% else %}
+                        <span class="badge warn">Chưa đá</span>
+                      {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                      {% if not f.played %}
+                        <a class="button primary" style="padding: 5px 12px; font-size: 13px;" href="{{ url_for('competitions') }}">
+                          ⚔️ Vào đá
+                        </a>
+                      {% else %}
+                        <span class="badge good">Hoàn tất</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: MANAGER GAME TILES & CLUB SETTINGS -->
+    <div class="col-4">
+      <!-- FAST GAME TILES -->
+      <div class="card" style="padding: 14px;">
+        <div class="card-title" style="margin-bottom: 12px; font-size: 18px;">
+          <span class="icon">⚡</span>
+          <span>TRUNG TÂM QUẢN LÝ</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Tile 1: Lineup -->
+          <a href="{{ url_for('lineup') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 26px;">🧲</span>
+              <div>
+                <div style="font-weight: 800; font-size: 15px; color: #fff;">Đội Hình Chính</div>
+                <div class="muted" style="font-size: 12px;">Kéo thả 11 đá chính & chọn Đội trưởng</div>
+              </div>
+            </div>
+            <span style="color: var(--accent-cyan); font-size: 18px;">→</span>
+          </a>
+
+          <!-- Tile 2: Market -->
+          <a href="{{ url_for('market') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 26px;">🛒</span>
+              <div>
+                <div style="font-weight: 800; font-size: 15px; color: #fff;">Sàn Chuyển Nhượng</div>
+                <div class="muted" style="font-size: 12px;">Đấu giá cầu thủ thời gian thực (3 phút/phiên)</div>
+              </div>
+            </div>
+            <span style="color: var(--accent-gold); font-size: 18px;">→</span>
+          </a>
+
+          <!-- Tile 3: Training -->
+          <a href="{{ url_for('training') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 26px;">🏋️</span>
+              <div>
+                <div style="font-weight: 800; font-size: 15px; color: #fff;">Sân Tập Thể Lực</div>
+                <div class="muted" style="font-size: 12px;">Huấn luyện bài tập để tăng OVR & thể lực</div>
+              </div>
+            </div>
+            <span style="color: var(--accent-green); font-size: 18px;">→</span>
+          </a>
+
+          <!-- Tile 4: Friendly -->
+          <a href="{{ url_for('friendly') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 26px;">🤝</span>
+              <div>
+                <div style="font-weight: 800; font-size: 15px; color: #fff;">Trận Đấu Giao Hữu</div>
+                <div class="muted" style="font-size: 12px;">Test đội hình & kiếm thêm tiền mặt mỗi ngày</div>
+              </div>
+            </div>
+            <span style="color: var(--accent-purple); font-size: 18px;">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- EDIT CLUB NAME -->
+      <div class="card">
+        <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">
+          <span class="icon">✏️</span>
+          <span>ĐỔI TÊN CÂU LẠC BỘ</span>
+        </div>
+        <p class="muted" style="margin-bottom: 12px;">Tên CLB sẽ cập nhật tức thì trên Bảng xếp hạng và các cúp đấu.</p>
+        <form method="post" action="{{ url_for('club_rename') }}">
+          <div style="display: flex; gap: 8px;">
+            <input name="new_name" placeholder="VD: Touchline Titans FC" value="{{ club.name }}" required>
+            <button class="button primary" type="submit" style="white-space: nowrap;">Lưu</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- TOP ELEVEN MANAGER TIPS -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(255, 184, 0, 0.08), rgba(15, 23, 42, 0.85)); border-color: rgba(255, 184, 0, 0.3);">
+        <div class="card-title" style="color: var(--accent-gold); font-size: 17px; margin-bottom: 10px;">
+          <span class="icon">💡</span>
+          <span>CHIẾN THUẬT QUẢN LÝ TOP ELEVEN</span>
+        </div>
+        <ul style="color: var(--text-muted); line-height: 1.7; padding-left: 18px; font-size: 13px;">
+          <li>Giữ <b style="color:#fff;">Condition > 75%</b> trước mỗi trận để cầu thủ phát huy tối đa hiệu quả.</li>
+          <li>Ưu tiên nâng cấp <b style="color:var(--accent-gold);">Sân Tập & Trung Tâm Y Tế</b> để giảm tối đa chấn thương.</li>
+          <li>Đấu giá chuyển nhượng vào <b style="color:var(--accent-cyan);">15 giây cuối</b> để chốt cầu thủ giá hời!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

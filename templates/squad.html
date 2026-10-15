@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- SQUAD ROSTER CONTROL BAR -->
+  <div class="card card-glow-cyan" style="padding: 18px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">👥</span>
+          <span>DANH SÁCH TOÀN ĐỘI (SQUAD ROSTER)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Bấm vào tên cầu thủ để mở <b>Hồ sơ chi tiết & biểu đồ chỉ số</b>. Bạn có thể bán cầu thủ để thu hồi vốn.
+        </p>
+      </div>
+
+      <div class="row">
+        <span class="badge cyan">Tổng số: <b>{{ players|length }} cầu thủ</b></span>
+        <a class="button primary" href="{{ url_for('lineup') }}">
+          🧲 Xếp 11 đá chính
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SQUAD DATA TABLE -->
+  <div class="card">
+    <div class="table-wrap">
+      <table id="squadTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-key="id"># <span class="muted" id="si_id"></span></th>
+            <th class="sortable" data-key="name">Cầu thủ <span class="muted" id="si_name"></span></th>
+            <th class="sortable" data-key="pos">Vị trí <span class="muted" id="si_pos"></span></th>
+            <th class="sortable" data-key="age">Tuổi <span class="muted" id="si_age"></span></th>
+            <th class="sortable" data-key="ovr">OVR <span class="muted" id="si_ovr"></span></th>
+            <th class="sortable" data-key="eff">Hiệu quả <span class="muted" id="si_eff"></span></th>
+            <th class="sortable" data-key="cond">Thể lực <span class="muted" id="si_cond"></span></th>
+            <th class="sortable" data-key="mor">Tinh thần <span class="muted" id="si_mor"></span></th>
+            <th class="sortable" data-key="form">Phong độ <span class="muted" id="si_form"></span></th>
+            <th class="sortable" data-key="inj">Trạng thái <span class="muted" id="si_inj"></span></th>
+            <th style="text-align: right;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in players %}
+            {% set pos_cls = "pos-gk" if p.position == "GK" else ("pos-def" if "D" in p.position else ("pos-mid" if "M" in p.position else "pos-fwd")) %}
+            <tr data-id="{{ p.id }}" 
+                data-name="{{ p.name }}" 
+                data-pos="{{ p.position }}" 
+                data-age="{{ p.age }}"
+                data-ovr="{{ p.overall }}" 
+                data-eff="{{ p.effective }}" 
+                data-cond="{{ p.condition }}" 
+                data-mor="{{ p.morale }}"
+                data-form="{{ p.form }}" 
+                data-inj="{{ 1 if p.injured else 0 }}">
+              
+              <td style="color: var(--text-dim); font-weight: 700;">#{{ p.id }}</td>
+              
+              <td>
+                <a href="{{ url_for('player_detail', pid=p.id) }}" style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 16px;">👤</span>
+                  <b style="color: #fff; font-size: 14.5px;">{{ p.name }}</b>
+                </a>
+              </td>
+
+              <td><span class="badge-pos {{ pos_cls }}">{{ p.position }}</span></td>
+              
+              <td>{{ p.age }}</td>
+
+              <td>
+                <div class="ovr-shield {% if p.overall >= 75 %}ovr-gold{% elif p.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}" style="width: 30px; height: 30px; font-size: 15px;">
+                  {{ "%.0f"|format(p.overall) }}
+                </div>
+              </td>
+
+              <td>
+                <b style="color: var(--accent-cyan); font-family: var(--font-game); font-size: 16px;">
+                  {{ "%.1f"|format(p.effective) }}
+                </b>
+              </td>
+
+              <td>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <div class="bar" style="width: 50px; height: 7px;">
+                    <span style="width: {{ p.condition }}%; background: {% if p.condition >= 80 %}var(--accent-green){% elif p.condition >= 60 %}var(--accent-gold){% else %}var(--accent-red){% endif %};"></span>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 700; color: {% if p.condition >= 80 %}var(--accent-green){% elif p.condition >= 60 %}var(--accent-gold){% else %}var(--accent-red){% endif %};">
+                    {{ p.condition }}%
+                  </span>
+                </div>
+              </td>
+
+              <td>
+                <span class="badge" style="font-size: 11px;">
+                  🔥 {{ p.morale }}
+                </span>
+              </td>
+
+              <td>
+                <span class="badge" style="font-size: 11px;">
+                  ⚡ {{ p.form }}
+                </span>
+              </td>
+
+              <td>
+                {% if p.injured %}
+                  <span class="badge bad">Chấn thương (ngày {{ p.injured_until_day }})</span>
+                {% else %}
+                  <span class="badge good">Sẵn sàng</span>
+                {% endif %}
+              </td>
+
+              <td style="text-align: right;">
+                <form method="post" action="{{ url_for('sell_player', pid=p.id) }}" onsubmit="return confirm('Bán cầu thủ {{ p.name }} để lấy tiền mặt?');" style="margin: 0;">
+                  <button class="button danger" type="submit" style="padding: 5px 12px; font-size: 12.5px;">
+                    Bán
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const table = document.getElementById('squadTable');
+      if(!table) return;
+      const tbody = table.querySelector('tbody');
+      const headers = table.querySelectorAll('th.sortable');
+      let sortKey = 'ovr';
+      let sortDir = -1;
+
+      const keys = ['id','name','pos','age','ovr','eff','cond','mor','form','inj'];
+      function setIndicator(key){
+        for(const k of keys){
+          const el = document.getElementById('si_'+k);
+          if(!el) continue;
+          el.textContent = (k===key) ? (sortDir===1 ? '▲' : '▼') : '';
+        }
+      }
+
+      function cmp(a,b){
+        const va = a.dataset[sortKey];
+        const vb = b.dataset[sortKey];
+        const na = Number(va);
+        const nb = Number(vb);
+        let res = 0;
+        if(!Number.isNaN(na) && !Number.isNaN(nb)){
+          res = na - nb;
+        } else {
+          res = String(va).localeCompare(String(vb), 'vi');
+        }
+        return res * sortDir;
+      }
+
+      function sortRows(){
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort(cmp);
+        for(const r of rows) tbody.appendChild(r);
+      }
+
+      headers.forEach(h=>{
+        h.addEventListener('click', ()=>{
+          const key = h.dataset.key;
+          if(!key) return;
+          if(sortKey === key){
+            sortDir *= -1;
+          } else {
+            sortKey = key;
+            sortDir = 1;
+          }
+          setIndicator(key);
+          sortRows();
+        });
+      });
+
+      // Default sort by OVR desc
+      setIndicator('ovr');
+      sortRows();
+    })();
+  </script>
+{% endblock %}

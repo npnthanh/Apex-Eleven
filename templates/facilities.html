@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- FACILITIES OVERVIEW BANNER -->
+  <div class="card card-glow-cyan" style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🏟️</span>
+          <span>CƠ SỞ VẬT CHẤT & SÂN VẬN ĐỘNG (STADIUM COMPLEX)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Nâng cấp công trình giúp tăng sức chứa sân, đẩy nhanh tiến độ huấn luyện và bảo vệ cầu thủ khỏi chấn thương.
+        </p>
+      </div>
+
+      <div class="row">
+        <span class="badge cyan">🏟️ Sức chứa: <b>{{ effects.capacity }} chỗ</b></span>
+        <span class="badge good">⚡ Tập luyện: <b>x{{ "%.2f"|format(effects.train_gain_mult) }}</b></span>
+        <span class="badge warn">💊 Hồi phục y tế: <b>x{{ "%.2f"|format(effects.injury_days_mult) }}</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 ISOMETRIC FACILITY CARDS -->
+  <div class="facility-grid">
+    {% for f in facilities %}
+      <div class="facility-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="fac-icon">
+              {% if f.name == "stadium" %}🏟️{% endif %}
+              {% if f.name == "training_ground" %}⚡{% endif %}
+              {% if f.name == "medical_center" %}🏥{% endif %}
+              {% if f.name == "youth_academy" %}🎓{% endif %}
+            </div>
+
+            <div class="fac-level">
+              <span class="badge warn" style="font-size: 13px; font-weight: 800;">
+                ⭐ CẤP {{ f.level }}
+              </span>
+            </div>
+          </div>
+
+          <div class="fac-title">
+            {% if f.name == "stadium" %}Sân Vận Động Chính{% endif %}
+            {% if f.name == "training_ground" %}Trung Tâm Huấn Luyện{% endif %}
+            {% if f.name == "medical_center" %}Trung Tâm Y Tế & Phục Hồi{% endif %}
+            {% if f.name == "youth_academy" %}Học Viện Đào Tạo Trẻ{% endif %}
+          </div>
+
+          <p class="muted" style="margin-top: 8px; font-size: 13px; line-height: 1.6;">
+            {% if f.name == "stadium" %}
+              Tăng sức chứa khán giả, tăng doanh thu tiền vé mỗi trận và giảm nguy cơ chấn thương thi đấu.
+            {% elif f.name == "training_ground" %}
+              Gia tăng tốc độ tập luyện (+XP) và giảm đáng kể tỉ lệ dính chấn thương trong các buổi tập.
+            {% elif f.name == "medical_center" %}
+              Trang thiết bị hiện đại giúp các cầu thủ chấn thương hồi phục nhanh hơn nhiều ngày.
+            {% elif f.name == "youth_academy" %}
+              Đào tạo và sản sinh ra các tài năng trẻ U18 triển vọng chất lượng cao định kỳ mỗi 7 ngày.
+            {% endif %}
+          </p>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          {% if f.remaining and f.remaining > 0 %}
+            <div style="margin-bottom: 10px;">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                <span class="badge warn">Đang thi công</span>
+                <b style="color: var(--accent-gold);">Còn {{ f.remaining }} giây</b>
+              </div>
+              <div class="bar"><span style="width: 70%; background: var(--accent-gold);"></span></div>
+            </div>
+            <a class="button secondary" href="{{ url_for('facilities') }}" style="width: 100%;">
+              🔁 Cập nhật tiến độ
+            </a>
+          {% else %}
+            <form method="post" action="{{ url_for('upgrade', name=f.name) }}" onsubmit="return confirm('Nâng cấp lên Cấp {{ f.next_level }} với chi phí {{ fmt_money(f.next_cost) }} tiền mặt? Thời gian: {{ f.next_time }}s');" style="margin: 0;">
+              <button class="button primary" type="submit" style="width: 100%;">
+                ⬆️ Lên Cấp {{ f.next_level }} ({{ fmt_money(f.next_cost) }})
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

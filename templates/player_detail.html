@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+  {% set pos_cls = "pos-gk" if player.position == "GK" else ("pos-def" if "D" in player.position else ("pos-mid" if "M" in player.position else "pos-fwd")) %}
+
+  <!-- PLAYER DOSSIER HERO BANNER -->
+  <div class="card card-glow-gold" style="padding: 24px; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+      
+      <!-- LEFT: PLAYER IDENTITY & STATS -->
+      <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+        <!-- Big OVR Rating Shield -->
+        <div class="ovr-shield {% if player.overall >= 75 %}ovr-gold{% elif player.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}" 
+             style="width: 72px; height: 72px; font-size: 34px; border-radius: 16px;">
+          {{ "%.0f"|format(player.overall) }}
+        </div>
+
+        <div>
+          <div style="margin-bottom: 4px;">
+            <a href="{{ url_for('squad') }}" class="muted" style="font-size: 13px;">← Quay lại Danh sách đội</a>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h1 style="font-size: 28px; margin: 0; color: #fff;">{{ player.name }}</h1>
+            <span class="badge-pos {{ pos_cls }}" style="font-size: 16px; padding: 3px 10px;">{{ player.position }}</span>
+            <span class="badge warn" style="font-size: 13px; font-weight: 700;">🎭 Role: {{ role }}</span>
+          </div>
+
+          <div class="row" style="margin-top: 10px; gap: 8px;">
+            <span class="badge">Tuổi: <b>{{ player.age }}</b></span>
+            <span class="badge cyan">⚡ Hiệu quả thi đấu: <b>{{ player.effective }}</b></span>
+            <span class="badge gold">⭐ Tiềm năng: <b>★ {{ player.potential }}</b></span>
+            <span class="badge">💵 Lương: <b>{{ fmt_money(player.salary) }}/tuần</b></span>
+            {% if player.injured %}
+              <span class="badge bad">Chấn thương đến ngày {{ player.injured_until_day }}</span>
+            {% else %}
+              <span class="badge good">Sẵn sàng thi đấu</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: TRAITS & SPECIAL ABILITIES -->
+      <div style="background: rgba(0, 0, 0, 0.35); padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border-subtle); min-width: 260px;">
+        <div class="muted" style="font-size: 12px; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">
+          ✨ KỸ NĂNG ĐẶC BIỆT (TRAITS)
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          {% if traits|length == 0 %}
+            <span class="badge muted">Chưa mở khóa kỹ năng</span>
+          {% else %}
+            {% for t in traits %}
+              <span class="badge warn" style="font-size: 13px; font-weight: 700;">⭐ {{ t }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT COLUMN: ATTRIBUTE BREAKDOWN -->
+    <div class="col-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📊</span>
+            <span>CHỈ SỐ KỸ THUẬT & THỂ LỰC</span>
+          </div>
+        </div>
+
+        <div class="statlist">
+          <div class="statrow">
+            <div class="stat-label">🎯 Dứt điểm (Finishing)</div>
+            <div class="bar"><span style="width: {{ player.finishing }}%"></span></div>
+            <div class="stat-val">{{ player.finishing }}</div>
+          </div>
+          
+          <div class="statrow">
+            <div class="stat-label">👟 Chuyền bóng (Passing)</div>
+            <div class="bar"><span style="width: {{ player.passing }}%"></span></div>
+            <div class="stat-val">{{ player.passing }}</div>
+          </div>
+
+          <div class="statrow">
+            <div class="stat-label">⚡ Tốc độ (Pace)</div>
+            <div class="bar"><span style="width: {{ player.pace }}%"></span></div>
+            <div class="stat-val">{{ player.pace }}</div>
+          </div>
+
+          <div class="statrow">
+            <div class="stat-label">🛡️ Tắc bóng (Tackling)</div>
+            <div class="bar"><span style="width: {{ player.tackling }}%"></span></div>
+            <div class="stat-val">{{ player.tackling }}</div>
+          </div>
+
+          <div class="statrow">
+            <div class="stat-label">👁️ Kèm người (Marking)</div>
+            <div class="bar"><span style="width: {{ player.marking }}%"></span></div>
+            <div class="stat-val">{{ player.marking }}</div>
+          </div>
+
+          <div class="statrow">
+            <div class="stat-label">🔋 Thể lực bền (Stamina)</div>
+            <div class="bar"><span style="width: {{ player.stamina_skill }}%"></span></div>
+            <div class="stat-val">{{ player.stamina_skill }}</div>
+          </div>
+        </div>
+
+        <!-- PLAYER ACTIONS -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+          <div class="card-title" style="font-size: 17px; margin-bottom: 8px;">
+            <span class="icon">⚙️</span>
+            <span>QUẢN LÝ CẦU THỦ</span>
+          </div>
+          
+          <form method="post" action="{{ url_for('player_rename', pid=player.id) }}">
+            <label>Đổi tên cầu thủ</label>
+            <div style="display: flex; gap: 8px;">
+              <input name="new_name" value="{{ player.name }}" required>
+              <button class="button primary" type="submit" style="white-space: nowrap;">Lưu tên</button>
+            </div>
+          </form>
+
+          <div style="margin-top: 14px;">
+            <form method="post" action="{{ url_for('sell_player', pid=player.id) }}" onsubmit="return confirm('Bạn chắc chắn muốn bán cầu thủ {{ player.name }}?');">
+              <button class="button danger" type="submit" style="width: 100%;">
+                💰 Bán cầu thủ thu hồi vốn
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: FORM HISTORY SPARKLINE & LOGS -->
+    <div class="col-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📈</span>
+            <span>LỊCH SỬ PHONG ĐỘ & TRẠNG THÁI</span>
+          </div>
+        </div>
+
+        {% if logs|length == 0 %}
+          <p class="muted" style="padding: 20px 0; text-align: center;">Chưa có dữ liệu lịch sử phong độ. Hãy thi đấu hoặc bấm "Sang ngày" để hệ thống ghi nhận.</p>
+        {% else %}
+          <div class="muted" style="font-size: 13px; margin-bottom: 8px;">
+            Biểu đồ biến thiên Form theo ngày thi đấu (gần nhất bên phải):
+          </div>
+
+          <div class="sparkline">
+            {% for h in logs %}
+              <div class="spark" title="Ngày {{ h.day }} • Form: {{ h.form }} | Cond: {{ h.condition }}%" style="height: {{ h.form }}%;"></div>
+            {% endfor %}
+          </div>
+
+          <div class="table-wrap" style="margin-top: 16px; max-height: 280px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Thể lực</th>
+                  <th>Tinh thần</th>
+                  <th>Phong độ</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for h in logs|reverse %}
+                  <tr>
+                    <td><span class="badge">Ngày {{ h.day }}</span></td>
+                    <td>
+                      <b style="color: {% if h.condition >= 80 %}var(--accent-green){% elif h.condition >= 60 %}var(--accent-gold){% else %}var(--accent-red){% endif %};">
+                        {{ h.condition }}%
+                      </b>
+                    </td>
+                    <td>🔥 {{ h.morale }}</td>
+                    <td><b style="color: var(--accent-cyan);">{{ h.form }}</b></td>
+                    <td><span class="badge">{{ h.note or '—' }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

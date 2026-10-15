@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card card-glow-cyan">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🏋️</span>
+          <span>TRUNG TÂM HUẤN LUYỆN TOÀN ĐỘI (TRAINING GROUND)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Huấn luyện giúp cầu thủ tăng chỉ số OVR. Chú ý giữ thể lực ổn định để tránh nguy cơ dính chấn thương.
+        </p>
+      </div>
+
+      <div class="row">
+        <span class="badge good">🟢 Sẵn sàng: <b>{{ healthy }} cầu thủ</b></span>
+        {% if injured > 0 %}
+          <span class="badge bad">🔴 Chấn thương: <b>{{ injured }} cầu thủ</b></span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: DRILL CONFIGURATION FORM -->
+    <div class="col-7">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">⚽</span>
+            <span>BÀI TẬP & CƯỜNG ĐỘ HUẤN LUYỆN</span>
+          </div>
+          <span class="badge cyan">⚡ Tốc độ tập: x{{ "%.2f"|format(effects.train_gain_mult) }}</span>
+        </div>
+
+        <form method="post">
+          <div class="formgrid">
+            <!-- Drill Focus -->
+            <div class="fcol-6">
+              <label>🎯 Nhóm bài tập chuyên sâu</label>
+              <select name="focus" style="font-size: 15px; font-weight: 700;">
+                <option value="attack">⚽ Tấn công (Dứt điểm & Tốc độ)</option>
+                <option value="defense">🛡️ Phòng ngự (Tắc bóng & Kèm người)</option>
+                <option value="fitness">🔋 Thể lực & Sức bền (Stamina & Condition)</option>
+                <option value="tactics">📐 Chiến thuật & Chuyền bóng (Passing)</option>
+              </select>
+            </div>
+
+            <!-- Intensity -->
+            <div class="fcol-6">
+              <label>⚡ Cường độ buổi tập</label>
+              <select name="intensity" style="font-size: 15px; font-weight: 700;">
+                <option value="light">🟢 Nhẹ (Hao ít thể lực, an toàn)</option>
+                <option value="normal" selected>🟡 Vừa (Cân bằng tăng tiến)</option>
+                <option value="hard">🔴 Nặng (Tăng chỉ số nhanh, rủi ro cao)</option>
+              </select>
+            </div>
+
+            <div class="fcol-12" style="margin-top: 10px;">
+              <button class="button success pulse" type="submit" style="width: 100%; padding: 12px; font-size: 16px;">
+                🏋️ BẮT ĐẦU BUỔI TẬP NGAY
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="row" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); gap: 10px;">
+          <span class="badge good">🛡️ Giảm chấn thương nhờ Sân tập: <b>x{{ "%.2f"|format(effects.train_injury_mult) }}</b></span>
+          <a class="badge cyan" href="{{ url_for('facilities') }}">Nâng cấp Sân tập →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: MEDICAL & TRAINING ADVICE -->
+    <div class="col-5">
+      <div class="card" style="background: linear-gradient(135deg, rgba(23, 37, 84, 0.6), rgba(15, 23, 42, 0.9)); border-color: rgba(0, 240, 255, 0.3);">
+        <div class="card-title" style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 12px;">
+          <span class="icon">💡</span>
+          <span>BÍ QUYẾT HUẤN LUYỆN TOP ELEVEN</span>
+        </div>
+
+        <ul style="color: var(--text-muted); line-height: 1.7; padding-left: 18px; font-size: 13.5px;">
+          <li><b>Thể lực (Condition) dưới 60%:</b> Tuyệt đối không cho tập nặng vì tỉ lệ đứt dây chằng rất cao!</li>
+          <li><b>Nâng cấp Sân tập:</b> Vừa gia tăng tốc độ thăng tiến OVR, vừa giảm nguy cơ chấn thương.</li>
+          <li><b>Nâng cấp Trung tâm Y tế:</b> Rút ngắn số ngày dưỡng thương của cầu thủ chủ chốt.</li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <a class="button secondary" href="{{ url_for('facilities') }}" style="width: 100%;">
+            🏟️ Đến Trung Tâm Cơ Sở Vật Chất
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

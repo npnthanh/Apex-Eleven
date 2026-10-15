@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card card-glow-cyan" style="padding: 18px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🏆</span>
+          <span>ĐẤU TRƯỜNG THI ĐẤU & BẢNG XẾP HẠNG (MATCH ARENA)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Theo dõi lịch thi đấu các giải (League, Cup, Champions Cup, Super Cup), dự đoán xác suất và thi đấu trực tiếp.
+        </p>
+      </div>
+
+      <div class="row">
+        <span class="badge cyan">CLB: <b>{{ club.name }}</b></span>
+        <span class="season-badge">Ngày {{ club.season_day }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT COLUMN: MATCHES TO PLAY & RECENT RESULTS -->
+    <div class="col-6">
+      <!-- PENDING FIXTURES (MATCH CLASH CARDS) -->
+      <div class="card card-glow-gold">
+        <div class="card-header" style="border-bottom-color: rgba(255, 184, 0, 0.3);">
+          <div class="card-title" style="color: var(--accent-gold);">
+            <span class="icon">⚔️</span>
+            <span>TRẬN ĐẤU CẦN ĐÁ CỦA BẠN ({{ pending|length }})</span>
+          </div>
+        </div>
+
+        {% if pending|length == 0 %}
+          <div style="text-align: center; padding: 24px 0;">
+            <p class="muted">Hiện tại không có trận đấu nào đang chờ.</p>
+            <form method="post" action="{{ url_for('do_advance_day') }}" style="margin-top: 10px;">
+              <button class="button primary" type="submit">⏭️ Sang ngày thi đấu tiếp theo</button>
+            </form>
+          </div>
+        {% else %}
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for f in pending %}
+              {% set pr = previews.get(f.id) %}
+              <div class="playercard" style="border: 1px solid rgba(0, 240, 255, 0.4); background: linear-gradient(135deg, rgba(23, 37, 84, 0.75), rgba(15, 23, 42, 0.95)); padding: 16px; margin-bottom: 0;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <span class="badge cyan">🏆 {{ f.competition }} • {{ f.round }}</span>
+                  <span class="badge">Ngày {{ f.day }}</span>
+                </div>
+
+                <!-- Teams Clash View -->
+                <div style="display: flex; justify-content: space-around; align-items: center; margin: 12px 0;">
+                  <div style="text-align: center; flex: 1;">
+                    <b style="font-size: 16px; color: {% if f.home == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
+                      {{ f.home }}
+                    </b>
+                    {% if f.home == club.name %}<div class="muted" style="font-size: 11px;">(Đội của bạn)</div>{% endif %}
+                  </div>
+
+                  <div style="text-align: center; padding: 0 14px;">
+                    {% if f.played %}
+                      <div class="clash-score" style="font-size: 26px;">{{ f.home_goals }} - {{ f.away_goals }}</div>
+                    {% else %}
+                      <div class="clash-vs" style="font-size: 22px;">VS</div>
+                    {% endif %}
+                  </div>
+
+                  <div style="text-align: center; flex: 1;">
+                    <b style="font-size: 16px; color: {% if f.away == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
+                      {{ f.away }}
+                    </b>
+                    {% if f.away == club.name %}<div class="muted" style="font-size: 11px;">(Đội của bạn)</div>{% endif %}
+                  </div>
+                </div>
+
+                <!-- Match Prediction / Probability Meter -->
+                {% if pr %}
+                  <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700;">
+                      <span style="color: var(--accent-green);">Thắng: {{ pr.win }}%</span>
+                      <span style="color: var(--accent-gold);">Hòa: {{ pr.draw }}%</span>
+                      <span style="color: var(--accent-red);">Thua: {{ pr.loss }}%</span>
+                    </div>
+
+                    <!-- Visual Probability Bar -->
+                    <div class="wdl-bar">
+                      <div class="wdl-w" style="width: {{ pr.win }}%;"></div>
+                      <div class="wdl-d" style="width: {{ pr.draw }}%;"></div>
+                      <div class="wdl-l" style="width: {{ pr.loss }}%;"></div>
+                    </div>
+
+                    <div class="muted" style="font-size: 11.5px; text-align: center; margin-top: 6px;">
+                      Dự báo xG: <b>{{ pr.xg_u }}</b> (Bạn) vs <b>{{ pr.xg_o }}</b> (Đối thủ)
+                    </div>
+                  </div>
+                {% endif %}
+
+                <!-- Play Button -->
+                <div style="margin-top: 14px; text-align: right;">
+                  {% if not f.played %}
+                    <form method="post" action="{{ url_for('play_fixture', fid=f.id) }}" style="margin: 0;">
+                      <button class="button primary pulse" type="submit" style="width: 100%; padding: 11px; font-size: 16px;">
+                        ⚔️ ĐÁ TRỰC TIẾP NGAY
+                      </button>
+                    </form>
+                  {% else %}
+                    <a class="button secondary" href="{{ url_for('competitions') }}" style="width: 100%;">
+                      Đã đá ({{ f.home_goals }} - {{ f.away_goals }})
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- RECENT RESULTS TICKER -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📜</span>
+            <span>KẾT QUẢ CÁC TRẬN ĐÃ ĐẤU</span>
+          </div>
+        </div>
+
+        {% if recent|length == 0 %}
+          <p class="muted">Chưa có kết quả nào được ghi nhận.</p>
+        {% else %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ngày</th>
+                  <th>Giải đấu</th>
+                  <th>Cặp đấu</th>
+                  <th style="text-align: right;">Tỉ số</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in recent %}
+                  <tr>
+                    <td><span class="badge">Ngày {{ m.day }}</span></td>
+                    <td><span class="badge cyan">{{ m.competition }}</span></td>
+                    <td>
+                      <b>{{ m.home }}</b> vs <b>{{ m.away }}</b>
+                    </td>
+                    <td style="text-align: right;">
+                      <span class="badge good" style="font-family: var(--font-game); font-size: 15px;">
+                        {{ m.home_goals }} - {{ m.away_goals }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: LEAGUE STANDINGS TABLE -->
+    <div class="col-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="icon">📊</span>
+            <span>BẢNG XẾP HẠNG LEAGUE CHÍNH THỨC</span>
+          </div>
+          <span class="badge gold">Mùa 1</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Câu lạc bộ</th>
+                <th>Trận</th>
+                <th>T</th>
+                <th>H</th>
+                <th>B</th>
+                <th>BT</th>
+                <th>BB</th>
+                <th>HS</th>
+                <th>ĐIỂM</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in standings %}
+                {% set is_user = (r.team == club.name) %}
+                <tr style="{% if is_user %}background: linear-gradient(90deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.04)); border-left: 3px solid var(--accent-cyan);{% elif r.rank <= 4 %}border-left: 3px solid rgba(0, 245, 118, 0.5);{% endif %}">
+                  <td>
+                    {% if r.rank == 1 %}
+                      <span style="color: var(--accent-gold); font-size: 16px;">🥇</span>
+                    {% elif r.rank == 2 %}
+                      <span style="color: #cbd5e1; font-size: 16px;">🥈</span>
+                    {% elif r.rank == 3 %}
+                      <span style="color: #b45309; font-size: 16px;">🥉</span>
+                    {% else %}
+                      <b>{{ r.rank }}</b>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <b style="color: {% if is_user %}var(--accent-cyan){% else %}#fff{% endif %}; font-size: 14px;">
+                      {{ r.team }}
+                    </b>
+                    {% if is_user %}
+                      <span class="badge cyan" style="font-size: 10px; padding: 0 4px; margin-left: 4px;">BẠN</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ r.P }}</td>
+                  <td>{{ r.W }}</td>
+                  <td>{{ r.D }}</td>
+                  <td>{{ r.L }}</td>
+                  <td>{{ r.GF }}</td>
+                  <td>{{ r.GA }}</td>
+                  <td>{{ r.GD }}</td>
+                  <td>
+                    <b style="font-family: var(--font-game); font-size: 17px; color: {% if is_user %}var(--accent-cyan){% elif r.rank==1 %}var(--accent-gold){% else %}#fff{% endif %};">
+                      {{ r.PTS }}
+                    </b>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-top: 14px; font-size: 12px; gap: 8px;">
+          <span style="display: flex; align-items: center; gap: 4px; color: var(--accent-green);">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block;"></span> Top 4: Vé Champions Cup
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

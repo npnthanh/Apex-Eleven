@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ club.name }} - Băng Ghế Chỉ Đạo | Top Eleven Edition</title>
+  
+  <!-- Modern Sports / Gaming Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Outfit:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- TOP ELEVEN HUD HEADER -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="crest" title="Crest của {{ club.name }}">
+        ⚽
+      </div>
+      <div class="brand-details">
+        <div class="game-title">
+          Băng Ghế Chỉ Đạo
+          <span class="tag-proto">V3</span>
+        </div>
+        <div class="brand-sub">
+          <b>{{ club.name }}</b>
+          <span>•</span>
+          <span class="season-badge">Ngày {{ club.season_day }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET & QUICK DAY ADVANCE -->
+    <div class="wallet">
+      <div class="pill-currency cash" title="Quỹ ngân sách CLB">
+        <span class="curr-icon">$</span>
+        <span class="curr-val">{{ fmt_money(club.cash) }}</span>
+      </div>
+
+      <div class="pill-currency token" title="Tokens đặc biệt để đấu giá / tính năng VIP">
+        <span class="curr-icon">🪙</span>
+        <span class="curr-val">{{ club.tokens }}</span>
+      </div>
+
+      <form method="post" action="{{ url_for('do_advance_day') }}" style="margin: 0;">
+        <button class="btn-advance-hud" type="submit" title="Chuyển sang ngày thi đấu tiếp theo">
+          <span>⏭️</span>
+          <span>Sang ngày</span>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- GAME NAVIGATION DOCK -->
+  <nav class="nav-dock">
+    <a class="{% if request.endpoint=='home' %}active{% endif %}" href="{{ url_for('home') }}">
+      <span>🏠</span> Tổng quan
+    </a>
+    <a class="{% if request.endpoint in ['lineup','save_lineup','lineup_autopick','lineup_clear'] %}active{% endif %}" href="{{ url_for('lineup') }}">
+      <span>🧲</span> Đội hình chính
+    </a>
+    <a class="{% if request.endpoint=='squad' %}active{% endif %}" href="{{ url_for('squad') }}">
+      <span>👥</span> Danh sách
+    </a>
+    <a class="{% if request.endpoint=='tactics' %}active{% endif %}" href="{{ url_for('tactics') }}">
+      <span>🎛️</span> Chiến thuật
+    </a>
+    <a class="{% if request.endpoint in ['training','do_training'] %}active{% endif %}" href="{{ url_for('training') }}">
+      <span>🏋️</span> Tập luyện
+    </a>
+    <a class="{% if request.endpoint in ['market','bid'] %}active{% endif %}" href="{{ url_for('market') }}">
+      <span>🛒</span> Chợ đấu giá
+    </a>
+    <a class="{% if request.endpoint in ['facilities','upgrade'] %}active{% endif %}" href="{{ url_for('facilities') }}">
+      <span>🏟️</span> Cơ sở vật chất
+    </a>
+    <a class="{% if request.endpoint in ['competitions','play_fixture'] %}active{% endif %}" href="{{ url_for('competitions') }}">
+      <span>🏆</span> Đấu trường
+    </a>
+    <a class="{% if request.endpoint in ['friendly','friendly_play'] %}active{% endif %}" href="{{ url_for('friendly') }}">
+      <span>🤝</span> Giao hữu
+    </a>
+  </nav>
+
+  <!-- MAIN GAME CONTAINER -->
+  <main class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flashwrap">
+          {% for m in messages %}
+            <div class="flash">
+              <span style="font-size: 20px;">📣</span>
+              <span>{{ m }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    BĂNG GHẾ CHỈ ĐẠO • Top Eleven Game Experience Prototype • Quản lý bóng đá chiến thuật đỉnh cao
+  </footer>
+</body>
+</html>

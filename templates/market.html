@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- AUCTION ROOM LIVE HEADER -->
+  <div class="market-hud">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span class="ovr-shield ovr-gold" style="width:28px; height:28px; font-size:14px;">LIVE</span>
+        <h2 style="margin: 0; font-size: 24px; letter-spacing: 1px;">SÀN CHUYỂN NHƯỢNG ĐẤU GIÁ</h2>
+      </div>
+      <p class="muted" style="margin: 0;">
+        Danh sách <b>20 cầu thủ</b> mỗi đợt. Mỗi phiên kéo dài <b>3 phút</b>. Cầu thủ bạn đã trả giá sẽ được ghim lên đầu.
+      </p>
+    </div>
+
+    <!-- LIVE COUNTDOWN TIMER & CONTROLS -->
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+      <div class="countdown-clock">
+        <span class="muted" style="font-weight: 700; text-transform: uppercase;">Reset sau:</span>
+        <div class="countdown-box" id="countdownBox">
+          ⏱️ <span id="countdown">{{ seconds_left }}</span>s
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="badge" style="display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 8px 14px;">
+          <input id="onlyWatched" type="checkbox" style="width: auto; transform: scale(1.2); cursor: pointer;">
+          <span>⭐ Chỉ hiện theo dõi</span>
+        </label>
+        <a class="button secondary" href="{{ url_for('market') }}" style="padding: 8px 14px; font-size: 14px;">
+          🔁 Tải lại
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PINNED WATCHLIST HERO CARDS -->
+  {% if watchlist|length > 0 %}
+    <div class="card card-glow-gold" style="margin-bottom: 24px;">
+      <div class="card-header" style="border-bottom-color: rgba(255, 184, 0, 0.25);">
+        <div class="card-title" style="color: var(--accent-gold);">
+          <span class="icon">📌</span>
+          <span>MỤC TIÊU BẠN ĐANG THEO DÕI & TRẢ GIÁ ({{ watchlist|length }})</span>
+        </div>
+        <span class="badge warn">Đang trong tầm ngắm</span>
+      </div>
+
+      <div class="grid" style="gap: 14px;">
+        {% for l in watchlist %}
+          {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
+          <div class="col-6">
+            <div class="playercard" style="border: 1px solid rgba(255, 184, 0, 0.4); background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); padding: 14px; margin-bottom: 0;">
+              <div class="top">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="badge-pos {{ pos_cls }}">{{ l.position }}</span>
+                  <div>
+                    <div class="name" style="font-size: 16px;">{{ l.name }}</div>
+                    <div class="sub">{{ l.age }} tuổi • Tiềm năng: ★{{ l.potential }}</div>
+                  </div>
+                </div>
+
+                <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}">
+                  {{ "%.0f"|format(l.overall) }}
+                </div>
+              </div>
+
+              <!-- Price & Leader Banner -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div>
+                  <div class="muted" style="font-size: 11px; text-transform: uppercase;">Giá hiện tại:</div>
+                  <div style="font-family: var(--font-game); font-size: 20px; font-weight: 900; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
+                    {% if l.currency == "cash" %}
+                      💵 {{ fmt_money(l.current_bid) }}
+                    {% else %}
+                      🪙 {{ l.current_bid }} Tokens
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div>
+                  {% if l.highest_bidder == "you" %}
+                    <span class="badge good" style="font-size: 13px; font-weight: 800; padding: 5px 10px;">👑 BẠN ĐANG DẪN</span>
+                  {% elif l.highest_bidder == "ai" %}
+                    <span class="badge warn" style="font-size: 13px; font-weight: 800; padding: 5px 10px;">⚠️ BỊ AI VƯỢT</span>
+                  {% else %}
+                    <span class="badge muted">Chưa có ai</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Bid Action Form -->
+              <div style="margin-top: 12px; text-align: right;">
+                <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0;">
+                  {% if l.currency == "cash" %}
+                    <button class="button success" type="submit" style="width: 100%;">
+                      ⚡ Trả giá thêm +{{ fmt_money(l.bid_step) }}
+                    </button>
+                  {% else %}
+                    <button class="button gold" type="submit" style="width: 100%;">
+                      ⚡ Trả giá thêm +1 🪙
+                    </button>
+                  {% endif %}
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ALL MARKET LISTINGS TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span class="icon">📋</span>
+        <span>DANH SÁCH TẤT CẢ CẦU THỦ THỊ TRƯỜNG</span>
+      </div>
+      <span class="muted" style="font-size: 12.5px;">Bấm vào tiêu đề cột để sắp xếp</span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="marketTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-key="name">Cầu thủ <span class="muted" id="si_name"></span></th>
+            <th class="sortable" data-key="pos">Vị trí <span class="muted" id="si_pos"></span></th>
+            <th class="sortable" data-key="age">Tuổi <span class="muted" id="si_age"></span></th>
+            <th class="sortable" data-key="ovr">OVR <span class="muted" id="si_ovr"></span></th>
+            <th class="sortable" data-key="pot">Tiềm năng <span class="muted" id="si_pot"></span></th>
+            <th class="sortable" data-key="cur">Tiền tệ <span class="muted" id="si_cur"></span></th>
+            <th class="sortable" data-key="bid">Giá hiện tại <span class="muted" id="si_bid"></span></th>
+            <th class="sortable" data-key="lead">Đang dẫn <span class="muted" id="si_lead"></span></th>
+            <th style="text-align: right;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in listings %}
+            {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
+            <tr class="{% if l.user_has_bid %}watched{% endif %}" 
+                data-watched="{{ 1 if l.user_has_bid else 0 }}"
+                data-name="{{ l.name }}" 
+                data-pos="{{ l.position }}" 
+                data-age="{{ l.age }}" 
+                data-ovr="{{ l.overall }}"
+                data-pot="{{ l.potential }}" 
+                data-cur="{{ 1 if l.currency=='token' else 0 }}"
+                data-bid="{{ l.current_bid }}" 
+                data-lead="{% if l.highest_bidder=='you' %}2{% elif l.highest_bidder=='ai' %}1{% else %}0{% endif %}">
+              
+              <td>
+                <div style="font-weight: 800; color: #fff; font-size: 14px;">{{ l.name }}</div>
+                {% if l.user_has_bid %}
+                  <span class="badge warn" style="font-size: 10px; padding: 1px 6px;">Đang theo dõi</span>
+                {% endif %}
+              </td>
+              <td><span class="badge-pos {{ pos_cls }}">{{ l.position }}</span></td>
+              <td>{{ l.age }}</td>
+              <td>
+                <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}" style="width: 28px; height: 28px; font-size: 14px;">
+                  {{ "%.0f"|format(l.overall) }}
+                </div>
+              </td>
+              <td><span class="badge cyan">★ {{ l.potential }}</span></td>
+              <td>
+                {% if l.currency == "cash" %}
+                  <span class="badge good">💵 Tiền mặt</span>
+                {% else %}
+                  <span class="badge warn">🪙 Token</span>
+                {% endif %}
+              </td>
+              <td>
+                <b style="font-family: var(--font-game); font-size: 16px; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
+                  {% if l.currency == "cash" %}
+                    {{ fmt_money(l.current_bid) }}
+                  {% else %}
+                    {{ l.current_bid }}
+                  {% endif %}
+                </b>
+              </td>
+              <td>
+                {% if l.highest_bidder == "you" %}
+                  <span class="badge good">👑 Bạn</span>
+                {% elif l.highest_bidder == "ai" %}
+                  <span class="badge warn">AI</span>
+                {% else %}
+                  <span class="badge muted">Chưa có</span>
+                {% endif %}
+              </td>
+              <td style="text-align: right;">
+                <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0;">
+                  {% if l.currency == "cash" %}
+                    <button class="button" type="submit" style="padding: 6px 12px; font-size: 13px;">
+                      +{{ fmt_money(l.bid_step) }}
+                    </button>
+                  {% else %}
+                    <button class="button gold" type="submit" style="padding: 6px 12px; font-size: 13px;">
+                      +1 🪙
+                    </button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC (COUNTDOWN & SORTING) -->
+  <script>
+    (function(){
+      let left = {{ seconds_left|int }};
+      const el = document.getElementById("countdown");
+      const box = document.getElementById("countdownBox");
+      function tick(){
+        if(!el) return;
+        el.textContent = left;
+        if(box && left <= 30){
+          box.classList.add("urgent");
+        }
+        left -= 1;
+        if(left < 0) {
+          window.location.reload();
+        } else {
+          setTimeout(tick, 1000);
+        }
+      }
+      tick();
+    })();
+
+    (function(){
+      const table = document.getElementById('marketTable');
+      if(!table) return;
+      const tbody = table.querySelector('tbody');
+      const headers = table.querySelectorAll('th.sortable');
+      let sortKey = null;
+      let sortDir = 1;
+
+      function setIndicator(key){
+        const ids = ['name','pos','age','ovr','pot','cur','bid','lead'];
+        for(const k of ids){
+          const el = document.getElementById('si_'+k);
+          if(!el) continue;
+          el.textContent = (k===key) ? (sortDir===1 ? '▲' : '▼') : '';
+        }
+      }
+
+      function cmp(a,b){
+        const va = a.dataset[sortKey];
+        const vb = b.dataset[sortKey];
+        const na = Number(va);
+        const nb = Number(vb);
+        let res = 0;
+        if(!Number.isNaN(na) && !Number.isNaN(nb)){
+          res = na - nb;
+        } else {
+          res = String(va).localeCompare(String(vb), 'vi');
+        }
+        return res * sortDir;
+      }
+
+      function sortRows(){
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a,b)=>{
+          const wa = Number(a.dataset.watched||0);
+          const wb = Number(b.dataset.watched||0);
+          if(wa !== wb) return wb - wa;
+          return cmp(a,b);
+        });
+        for(const r of rows) tbody.appendChild(r);
+      }
+
+      headers.forEach(h=>{
+        h.addEventListener('click', ()=>{
+          const key = h.dataset.key;
+          if(!key) return;
+          if(sortKey === key){
+            sortDir *= -1;
+          } else {
+            sortKey = key;
+            sortDir = 1;
+          }
+          setIndicator(key);
+          sortRows();
+        });
+      });
+
+      // Default initial key: highest bid
+      sortKey = 'bid';
+      sortDir = -1;
+      setIndicator('bid');
+      sortRows();
+
+      // Filter watched
+      const onlyWatched = document.getElementById('onlyWatched');
+      if(onlyWatched){
+        onlyWatched.addEventListener('change', ()=>{
+          const on = onlyWatched.checked;
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          rows.forEach(r=>{
+            const w = Number(r.dataset.watched||0);
+            r.style.display = (on && w===0) ? 'none' : '';
+          });
+        });
+      }
+    })();
+  </script>
+{% endblock %}

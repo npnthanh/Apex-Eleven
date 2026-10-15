@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- TACTICAL BOARD CONTROL HEADER -->
+  <div class="card card-glow-cyan" style="padding: 16px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🧲</span>
+          <span>ĐỘI HÌNH RA SÂN (TOP ELEVEN TACTICS)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Kéo thả cầu thủ từ danh sách ghế dự bị vào vị trí sân. Bấm ⭐ để trao băng <b>Đội trưởng (👑)</b>.
+        </p>
+      </div>
+
+      <!-- TEAM STATS & QUICK ACTIONS -->
+      <div class="row">
+        <span class="badge cyan">⚽ Sơ đồ: <b>{{ formation }}</b></span>
+        <span class="badge good">⚡ Sức mạnh: <b>{{ est_strength }}</b></span>
+        <span class="badge warn">🎯 xG Dự kiến: <b>{{ est_xg }} - {{ est_xg_opp }}</b></span>
+
+        <form method="post" action="{{ url_for('lineup_autopick') }}" style="margin: 0;">
+          <button class="button success" type="submit" style="padding: 7px 14px; font-size: 14px;">
+            ✨ Tự động xếp
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('lineup_clear') }}" onsubmit="return confirm('Xóa toàn bộ 11 cầu thủ đá chính để xếp lại?');" style="margin: 0;">
+          <button class="button danger" type="submit" style="padding: 7px 14px; font-size: 14px;">
+            🧹 Xóa hết
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PITCH & SQUAD SELECTION GRID -->
+  <div class="lineup-wrap">
+    <!-- LEFT: REALISTIC FOOTBALL FIELD -->
+    <div class="pitch-container">
+      <form method="post" action="{{ url_for('save_lineup') }}" id="lineupForm">
+        <input type="hidden" name="captain_slot" id="captain_slot" value="{% if captain_slot is not none %}{{ captain_slot }}{% endif %}">
+
+        {% for s in slots %}
+          <input type="hidden" name="slot_{{ s.slot_index }}" id="slot_{{ s.slot_index }}" value="{% if s.player %}{{ s.player.id }}{% endif %}">
+        {% endfor %}
+
+        <!-- THE FOOTBALL PITCH -->
+        <div class="pitch" id="pitch">
+          <!-- Center Field Markings -->
+          <div class="pitch-center-circle"></div>
+          <div class="pitch-center-spot"></div>
+
+          <!-- Penalty Areas -->
+          <div class="pitch-box-top"></div>
+          <div class="pitch-box-bottom"></div>
+          <div class="pitch-goal-bottom"></div>
+
+          <!-- PLAYER TOKENS ON PITCH -->
+          {% for s in slots %}
+            {% set pos_cls = "pos-gk" if s.slot_pos == "GK" else ("pos-def" if "D" in s.slot_pos else ("pos-mid" if "M" in s.slot_pos else "pos-fwd")) %}
+            <div class="slot {% if not s.player %}empty{% endif %}" 
+                 data-slot="{{ s.slot_index }}" 
+                 data-slotpos="{{ s.slot_pos }}" 
+                 style="left: {{ s.x }}%; top: {{ s.y }}%;">
+              
+              <!-- Position & Captain indicator -->
+              <div class="pos">
+                <span class="badge-pos {{ pos_cls }}">{{ s.slot_pos }}</span>
+                {% if s.is_captain %}
+                  <span class="badge warn" style="margin-left: 4px; padding: 1px 5px; font-size: 11px;">👑 C</span>
+                {% endif %}
+              </div>
+
+              <!-- Player Name & OVR -->
+              {% if s.player %}
+                <div class="pname" title="{{ s.player.name }}">{{ s.player.name }}</div>
+                <div class="meta">
+                  <b style="color: var(--accent-gold);">★ {{ s.player.overall }}</b> • 
+                  <span style="color: {% if s.player.condition >= 80 %}var(--accent-green){% elif s.player.condition >= 60 %}var(--accent-gold){% else %}var(--accent-red){% endif %};">
+                    ⚡{{ s.player.condition }}%
+                  </span>
+                  {% if s.player.injured %}
+                    • <b style="color: var(--accent-red);">Inj</b>
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="pname">Trống</div>
+                <div class="meta" style="color: var(--text-dim);">Kéo vào đây</div>
+              {% endif %}
+
+              <!-- Actions on Slot -->
+              <div class="slot-actions">
+                <button class="mini star" type="button" data-action="captain" title="Đặt làm Đội trưởng">👑</button>
+                <button class="mini clear" type="button" data-action="clear" title="Tháo khỏi vị trí">✕</button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- SAVE BUTTON BAR -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+          <div class="muted" style="font-size: 13px;">
+            💡 Kéo trực tiếp một cầu thủ sang vị trí khác để hoán đổi nhanh.
+          </div>
+          <button class="button primary pulse" type="submit" style="padding: 10px 24px; font-size: 16px;">
+            💾 LƯU ĐỘI HÌNH RA SÂN
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT: SQUAD BENCH / RESERVES TRAY -->
+    <div class="card" style="padding: 16px;">
+      <div class="card-header" style="margin-bottom: 12px; padding-bottom: 8px;">
+        <div class="card-title" style="font-size: 18px;">
+          <span class="icon">👥</span>
+          <span>DỰ BỊ (KÉO THẢ)</span>
+        </div>
+        <span class="badge">{{ players|length }} Cầu thủ</span>
+      </div>
+
+      <!-- SEARCH INPUT -->
+      <div style="margin-bottom: 10px;">
+        <input id="playerSearch" type="text" placeholder="🔍 Tìm cầu thủ hoặc vị trí (ST, MC...)..." style="font-size: 13.5px;">
+      </div>
+
+      <!-- POSITION FILTER CHIPS -->
+      <div class="row" style="gap: 5px; margin-bottom: 12px;" id="posFilters">
+        <button type="button" class="mini star" data-filter="all" style="flex: 1;">TẤT CẢ</button>
+        <button type="button" class="mini" data-filter="gk" style="flex: 1;">GK</button>
+        <button type="button" class="mini" data-filter="def" style="flex: 1;">DEF</button>
+        <button type="button" class="mini" data-filter="mid" style="flex: 1;">MID</button>
+        <button type="button" class="mini" data-filter="fwd" style="flex: 1;">FWD</button>
+      </div>
+
+      <!-- DRAGGABLE PLAYER LIST -->
+      <div class="playerlist" id="playerList">
+        {% for p in players %}
+          {% set pos_cls = "pos-gk" if p.position == "GK" else ("pos-def" if "D" in p.position else ("pos-mid" if "M" in p.position else "pos-fwd")) %}
+          {% set cat = "gk" if p.position == "GK" else ("def" if "D" in p.position else ("mid" if "M" in p.position else "fwd")) %}
+          <div class="playercard" draggable="true"
+               data-playerid="{{ p.id }}" 
+               data-name="{{ p.name|lower }}" 
+               data-pos="{{ p.position|lower }}"
+               data-cat="{{ cat }}"
+               data-ovr="{{ p.overall }}" 
+               data-cond="{{ p.condition }}" 
+               data-injured="{{ 1 if p.injured else 0 }}">
+            
+            <div class="top">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge-pos {{ pos_cls }}">{{ p.position }}</span>
+                <div>
+                  <div class="name">{{ p.name }}</div>
+                  <div class="sub">{{ p.age }} tuổi • Lương {{ fmt_money(p.salary) }}</div>
+                </div>
+              </div>
+
+              <!-- OVR Rating Shield -->
+              <div class="ovr-shield {% if p.overall >= 75 %}ovr-gold{% elif p.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}">
+                {{ "%.0f"|format(p.overall) }}
+              </div>
+            </div>
+
+            <div class="row2">
+              <span class="badge good">⚡ Thể lực {{ p.condition }}%</span>
+              <span class="badge">🔥 Form {{ p.form }}</span>
+              <span class="badge cyan">⭐ Pot {{ p.potential }}</span>
+              {% if p.injured %}
+                <span class="badge bad">Chấn thương</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE DRAG & DROP SCRIPT -->
+  <script>
+  (function(){
+    const pitch = document.getElementById('pitch');
+    const form = document.getElementById('lineupForm');
+    if(!pitch || !form) return;
+
+    let dragId = null;
+
+    function getPlayerCard(id){
+      return document.querySelector(`.playercard[data-playerid="${id}"]`);
+    }
+
+    function slotEl(slotIdx){
+      return document.querySelector(`.slot[data-slot="${slotIdx}"]`);
+    }
+
+    function getPosClass(pos){
+      if(!pos) return 'pos-mid';
+      if(pos === 'GK') return 'pos-gk';
+      if(pos.includes('D')) return 'pos-def';
+      if(pos.includes('M')) return 'pos-mid';
+      return 'pos-fwd';
+    }
+
+    function setSlot(slotIdx, playerId){
+      // Ensure uniqueness: if player already in another slot, clear that slot
+      const hiddenInputs = form.querySelectorAll('input[type="hidden"][id^="slot_"]');
+      hiddenInputs.forEach(inp=>{
+        if(inp.id !== `slot_${slotIdx}` && inp.value === String(playerId)){
+          clearSlot(Number(inp.id.replace('slot_','')));
+        }
+      });
+
+      const inp = document.getElementById(`slot_${slotIdx}`);
+      if(inp) inp.value = String(playerId);
+
+      const card = getPlayerCard(playerId);
+      const s = slotEl(slotIdx);
+      if(!card || !s) return;
+
+      const name = card.querySelector('.name')?.textContent || 'Player';
+      const pos = card.dataset.pos?.toUpperCase() || '';
+      const ovr = card.dataset.ovr || '';
+      const cond = card.dataset.cond || '';
+      const injured = card.dataset.injured === '1';
+
+      const slotPos = s.dataset.slotpos || '';
+      const isCap = (document.getElementById('captain_slot')?.value === String(slotIdx));
+      const crown = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
+      const posCls = getPosClass(slotPos);
+
+      s.classList.remove('empty');
+      s.querySelector('.pos').innerHTML = `<span class="badge-pos ${posCls}">${slotPos}</span>${crown}`;
+      s.querySelector('.pname').textContent = name;
+      s.querySelector('.meta').innerHTML = `<b style="color: var(--accent-gold);">★ ${ovr}</b> • <span style="color:${cond >= 80 ? 'var(--accent-green)' : (cond >= 60 ? 'var(--accent-gold)' : 'var(--accent-red)')}">⚡${cond}%</span>` + (injured ? ` • <b style="color: var(--accent-red);">Inj</b>` : '');
+    }
+
+    function clearSlot(slotIdx){
+      const inp = document.getElementById(`slot_${slotIdx}`);
+      if(inp) inp.value = '';
+      const s = slotEl(slotIdx);
+      if(!s) return;
+      const slotPos = s.dataset.slotpos || '';
+      const isCap = (document.getElementById('captain_slot')?.value === String(slotIdx));
+      const crown = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
+      const posCls = getPosClass(slotPos);
+
+      s.classList.add('empty');
+      s.querySelector('.pos').innerHTML = `<span class="badge-pos ${posCls}">${slotPos}</span>${crown}`;
+      s.querySelector('.pname').innerHTML = 'Trống';
+      s.querySelector('.meta').textContent = 'Kéo vào đây';
+    }
+
+    // Drag start for player cards
+    document.querySelectorAll('.playercard').forEach(card=>{
+      card.addEventListener('dragstart', (e)=>{
+        dragId = card.dataset.playerid;
+        e.dataTransfer.setData('text/plain', dragId);
+        card.style.opacity = '0.5';
+      });
+      card.addEventListener('dragend', ()=>{
+        card.style.opacity = '1';
+      });
+    });
+
+    // Slots as drop targets
+    document.querySelectorAll('.slot').forEach(s=>{
+      s.addEventListener('dragover', (e)=>{ 
+        e.preventDefault(); 
+        s.classList.add('dragover'); 
+      });
+      s.addEventListener('dragleave', ()=> s.classList.remove('dragover'));
+      s.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        s.classList.remove('dragover');
+        const pid = e.dataTransfer.getData('text/plain') || dragId;
+        if(!pid) return;
+        setSlot(Number(s.dataset.slot), pid);
+      });
+
+      // Buttons
+      s.querySelectorAll('button[data-action]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const action = btn.dataset.action;
+          const idx = Number(s.dataset.slot);
+          if(action === 'clear'){
+            clearSlot(idx);
+          }
+          if(action === 'captain'){
+            document.getElementById('captain_slot').value = String(idx);
+            // update crowns
+            document.querySelectorAll('.slot').forEach(ss=>{
+              const sp = ss.dataset.slotpos || '';
+              const isCap = document.getElementById('captain_slot').value === String(ss.dataset.slot);
+              const crown2 = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
+              const posCls = getPosClass(sp);
+              const posEl = ss.querySelector('.pos');
+              if(posEl) posEl.innerHTML = `<span class="badge-pos ${posCls}">${sp}</span>${crown2}`;
+            });
+          }
+        });
+      });
+    });
+
+    // Search and Position filter
+    const search = document.getElementById('playerSearch');
+    const list = document.getElementById('playerList');
+    const posFilterBtns = document.querySelectorAll('#posFilters button');
+    let currentFilter = 'all';
+
+    function applyFilter(){
+      const q = (search?.value || '').trim().toLowerCase();
+      list?.querySelectorAll('.playercard').forEach(card=>{
+        const name = card.dataset.name || '';
+        const pos = card.dataset.pos || '';
+        const cat = card.dataset.cat || '';
+        const matchSearch = !q || name.includes(q) || pos.includes(q);
+        const matchFilter = (currentFilter === 'all') || (cat === currentFilter);
+        card.style.display = (matchSearch && matchFilter) ? '' : 'none';
+      });
+    }
+
+    if(search) search.addEventListener('input', applyFilter);
+
+    posFilterBtns.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        posFilterBtns.forEach(b=>b.classList.remove('star'));
+        btn.classList.add('star');
+        currentFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+  })();
+  </script>
+{% endblock %}

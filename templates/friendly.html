@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card card-glow-cyan">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <div class="card-title" style="margin-bottom: 4px;">
+          <span class="icon">🤝</span>
+          <span>TRẬN ĐẤU GIAO HỮU CỌ XÁT (EXHIBITION MATCH)</span>
+        </div>
+        <p class="muted" style="margin: 0;">
+          Thử nghiệm sơ đồ chiến thuật mới, kiểm tra cầu thủ vừa mua và nhận thưởng tiền mặt + tinh thần thi đấu mỗi ngày.
+        </p>
+      </div>
+
+      <div class="row">
+        <a class="button secondary" href="{{ url_for('lineup') }}">🧲 Chỉnh đá chính</a>
+        <a class="button secondary" href="{{ url_for('tactics') }}">🎛️ Chỉnh chiến thuật</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: MATCH CLASH & SIMULATION CARD -->
+    <div class="col-8">
+      <div class="fixture-clash-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge cyan">🤝 Trận Giao Hữu Hôm Nay</span>
+          {% if can_play %}
+            <span class="badge good">SẴN SÀNG THI ĐẤU</span>
+          {% else %}
+            <span class="badge warn">ĐÃ THI ĐẤU HÔM NAY</span>
+          {% endif %}
+        </div>
+
+        <div class="clash-teams" style="margin: 24px 0;">
+          <div class="clash-team home">
+            <div class="clash-crest">⚽</div>
+            <div class="clash-name">{{ club.name }}</div>
+            <div class="ovr-shield ovr-gold" style="margin-top: 6px;">{{ est_strength }}</div>
+            <span class="badge cyan" style="margin-top: 4px;">Sức mạnh của bạn</span>
+          </div>
+
+          <div style="text-align: center;">
+            <div class="clash-vs">VS</div>
+          </div>
+
+          <div class="clash-team away">
+            <div class="clash-crest">🛡️</div>
+            <div class="clash-name">Đối Thủ Thử Lửa</div>
+            <div class="ovr-shield ovr-silver" style="margin-top: 6px;">{{ opp_strength }}</div>
+            <span class="badge" style="margin-top: 4px;">Sức mạnh đối thủ</span>
+          </div>
+        </div>
+
+        <!-- WIN / DRAW / LOSS GAUGE -->
+        <div style="background: rgba(0,0,0,0.35); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border-subtle);">
+          <div class="muted" style="font-size: 12px; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; text-align: center;">
+            DỰ ĐOÁN XÁC SUẤT KẾT QUẢ
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14px;">
+            <span style="color: var(--accent-green);">🟢 Thắng: {{ win }}%</span>
+            <span style="color: var(--accent-gold);">🟡 Hòa: {{ draw }}%</span>
+            <span style="color: var(--accent-red);">🔴 Thua: {{ loss }}%</span>
+          </div>
+
+          <div class="wdl-bar" style="height: 12px; margin-top: 8px;">
+            <div class="wdl-w" style="width: {{ win }}%;"></div>
+            <div class="wdl-d" style="width: {{ draw }}%;"></div>
+            <div class="wdl-l" style="width: {{ loss }}%;"></div>
+          </div>
+        </div>
+
+        <!-- PLAY ACTION -->
+        <div style="margin-top: 20px; text-align: center;">
+          {% if can_play %}
+            <form method="post" action="{{ url_for('friendly_play') }}" style="margin: 0;">
+              <button class="button primary pulse" type="submit" style="padding: 12px 32px; font-size: 18px; width: 100%;">
+                ⚔️ BẮT ĐẦU ĐÁ GIAO HỮU NGAY
+              </button>
+            </form>
+          {% else %}
+            <div style="padding: 12px; background: rgba(255, 184, 0, 0.1); border: 1px solid rgba(255, 184, 0, 0.3); border-radius: 10px;">
+              <span class="badge warn" style="font-size: 13px;">Bạn đã đá giao hữu ngày hôm nay. Hãy sang ngày mới để đá tiếp!</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: BENEFITS & FACILITIES -->
+    <div class="col-4">
+      <div class="card" style="background: linear-gradient(135deg, rgba(23, 37, 84, 0.6), rgba(15, 23, 42, 0.9)); border-color: rgba(0, 240, 255, 0.3);">
+        <div class="card-title" style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 12px;">
+          <span class="icon">🎁</span>
+          <span>LỢI ÍCH ĐÁ GIAO HỮU</span>
+        </div>
+
+        <ul style="color: var(--text-muted); line-height: 1.7; padding-left: 18px; font-size: 13.5px;">
+          <li><b>Thử nghiệm cầu thủ:</b> Kiểm tra độ ăn ý của các tân binh mới mua từ sàn đấu giá.</li>
+          <li><b>Phần thưởng tài chính:</b> Thắng trận nhận thưởng tiền mặt và tăng nhẹ tinh thần (Morale).</li>
+          <li><b>Đội trưởng (👑):</b> Giúp kích thích toàn đội và tăng thêm sức mạnh trong trận.</li>
+        </ul>
+
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <a class="button secondary" href="{{ url_for('facilities') }}" style="width: 100%;">
+            🏟️ Nâng Cấp Cơ Sở Vật Chất
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
