@@ -1,335 +1,1350 @@
 {% extends "base.html" %}
+
+{% block title %}{{ club.name }} - Đội Bóng | Top Eleven Edition{% endblock %}
+
+{% block page_title %}ĐỘI BÓNG{% endblock %}
+
 {% block content %}
-  <!-- TACTICAL BOARD CONTROL HEADER -->
-  <div class="card card-glow-cyan" style="padding: 16px 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <div class="card-title" style="margin-bottom: 4px;">
-          <span class="icon">🧲</span>
-          <span>ĐỘI HÌNH RA SÂN (TOP ELEVEN TACTICS)</span>
-        </div>
-        <p class="muted" style="margin: 0;">
-          Kéo thả cầu thủ từ danh sách ghế dự bị vào vị trí sân. Bấm ⭐ để trao băng <b>Đội trưởng (👑)</b>.
-        </p>
-      </div>
-
-      <!-- TEAM STATS & QUICK ACTIONS -->
-      <div class="row">
-        <span class="badge cyan">⚽ Sơ đồ: <b>{{ formation }}</b></span>
-        <span class="badge good">⚡ Sức mạnh: <b>{{ est_strength }}</b></span>
-        <span class="badge warn">🎯 xG Dự kiến: <b>{{ est_xg }} - {{ est_xg_opp }}</b></span>
-
-        <form method="post" action="{{ url_for('lineup_autopick') }}" style="margin: 0;">
-          <button class="button success" type="submit" style="padding: 7px 14px; font-size: 14px;">
-            ✨ Tự động xếp
-          </button>
-        </form>
-
-        <form method="post" action="{{ url_for('lineup_clear') }}" onsubmit="return confirm('Xóa toàn bộ 11 cầu thủ đá chính để xếp lại?');" style="margin: 0;">
-          <button class="button danger" type="submit" style="padding: 7px 14px; font-size: 14px;">
-            🧹 Xóa hết
-          </button>
-        </form>
-      </div>
-    </div>
+<div class="team-management-wrap">
+  <!-- TOP THREE TABS: ĐỘI HÌNH | SƠ ĐỒ | CHIẾN THUẬT (DEFAULT IS SƠ ĐỒ) -->
+  <div class="team-tabs-bar">
+    <button type="button" class="team-tab-btn {% if active_tab == 'doihinh' %}active{% endif %}" id="tabBtn_doihinh" onclick="switchTeamTab('doihinh')">
+      <span class="tab-txt">ĐỘI HÌNH</span>
+    </button>
+    <button type="button" class="team-tab-btn {% if active_tab not in ['doihinh', 'chienthuat'] %}active{% endif %}" id="tabBtn_sodo" onclick="switchTeamTab('sodo')">
+      <span class="tab-txt">SƠ ĐỒ</span>
+    </button>
+    <button type="button" class="team-tab-btn {% if active_tab == 'chienthuat' %}active{% endif %}" id="tabBtn_chienthuat" onclick="switchTeamTab('chienthuat')">
+      <span class="tab-txt">CHIẾN THUẬT</span>
+      <span class="tab-badge-star">⭐</span>
+    </button>
   </div>
 
-  <!-- PITCH & SQUAD SELECTION GRID -->
-  <div class="lineup-wrap">
-    <!-- LEFT: REALISTIC FOOTBALL FIELD -->
-    <div class="pitch-container">
-      <form method="post" action="{{ url_for('save_lineup') }}" id="lineupForm">
-        <input type="hidden" name="captain_slot" id="captain_slot" value="{% if captain_slot is not none %}{{ captain_slot }}{% endif %}">
+  <!-- ========================================================================= -->
+  <!-- TAB 2: SƠ ĐỒ (DEFAULT VIEW - HORIZONTAL PITCH & 4 SIDE BUTTONS)           -->
+  <!-- ========================================================================= -->
+  <div class="team-tab-content {% if active_tab not in ['doihinh', 'chienthuat'] %}active{% endif %}" id="tabPane_sodo">
 
+    <!-- SUB-BAR: QUICK CONTROLS & FORMATION SELECTOR -->
+    <div class="formation-subbar">
+      <div class="fsb-left">
+        <label class="fsb-label">Sơ đồ:</label>
+        <select id="formationSelect" onchange="changeFormation(this.value)">
+          {% for f in ["4-4-2", "4-3-3", "4-2-3-1", "3-5-2", "5-3-2"] %}
+            <option value="{{ f }}" {% if formation == f %}selected{% endif %}>{{ f }}</option>
+          {% endfor %}
+        </select>
+        <span class="cltt-pill">CLTT: <b>{{ cltt_avg }}</b> ({{ cltt_stars }})</span>
+        {% if custom_layout %}<span class="badge cyan pitch-layout-badge">Sơ đồ tùy chỉnh</span>{% endif %}
+      </div>
+
+      <div class="fsb-right">
+        <button class="btn-fsb" type="button" id="pitchZonesToggle" aria-pressed="false" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h4v4H5V5zm6 0h4v4h-4V5zM5 11h4v4H5v-4zm6 0h4v4h-4v-4z" clip-rule="evenodd"/></svg>
+          Khu vực vị trí
+        </button>
+        <!-- Autopick button -->
+        <form method="post" action="{{ url_for('lineup_autopick') }}" style="margin: 0; display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn-fsb btn-fsb-auto" type="submit" title="Tự động xếp 11 cầu thủ mạnh nhất" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="#facc15"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            Tự động xếp
+          </button>
+        </form>
+
+        <!-- Clear lineup button -->
+        <form method="post" action="{{ url_for('lineup_clear') }}" onsubmit="return confirm('Xóa toàn bộ 11 cầu thủ đá chính để xếp lại?');" style="margin: 0; display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn-fsb btn-fsb-clear" type="submit" title="Tháo toàn bộ cầu thủ ra khỏi sân" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="#f87171"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            Xóa hết
+          </button>
+        </form>
+
+        <!-- Save button -->
+        <button class="btn-fsb btn-fsb-save" type="button" onclick="submitLineupForm()" title="Lưu lại tất cả thay đổi trên sa bàn" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z"/><path d="M9 4a1 1 0 012 0v2H9V4z"/></svg>
+          LƯU THAY ĐỔI
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN PITCH STAGE: HORIZONTAL PITCH + 4 SIDE BUTTONS -->
+    <div class="pitch-stage">
+      <form method="post" action="{{ url_for('save_lineup') }}" id="lineupForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="captain_slot" id="captain_slot" value="{{ captain_slot if captain_slot is not none else '' }}">
+
+        <!-- Slot hidden inputs -->
         {% for s in slots %}
-          <input type="hidden" name="slot_{{ s.slot_index }}" id="slot_{{ s.slot_index }}" value="{% if s.player %}{{ s.player.id }}{% endif %}">
+          <input type="hidden" name="slot_{{ s.slot_index }}" id="slot_{{ s.slot_index }}" value="{{ s.player.id if s.player else '' }}">
+          <input type="hidden" name="arrow_{{ s.slot_index }}" id="arrow_{{ s.slot_index }}" value="{{ s.arrow_trend }}">
+          <input type="hidden" name="x_{{ s.slot_index }}" id="pitch_x_{{ s.slot_index }}" value="{{ s.x }}">
+          <input type="hidden" name="y_{{ s.slot_index }}" id="pitch_y_{{ s.slot_index }}" value="{{ s.y }}">
         {% endfor %}
 
-        <!-- THE FOOTBALL PITCH -->
-        <div class="pitch" id="pitch">
-          <!-- Center Field Markings -->
-          <div class="pitch-center-circle"></div>
-          <div class="pitch-center-spot"></div>
+        <!-- Bench hidden inputs -->
+        {% for b_idx in range(7) %}
+          {% set bp = bench_players[b_idx] if b_idx < bench_players|length else none %}
+          <input type="hidden" name="bench_{{ b_idx }}" id="bench_inp_{{ b_idx }}" value="{{ bp.id if bp else '' }}">
+        {% endfor %}
 
-          <!-- Penalty Areas -->
-          <div class="pitch-box-top"></div>
-          <div class="pitch-box-bottom"></div>
-          <div class="pitch-goal-bottom"></div>
+        <!-- Set piece takers hidden inputs -->
+        <input type="hidden" name="captain_pid" id="sp_captain_pid" value="{{ set_pieces.captain.id if set_pieces.captain else '' }}">
+        <input type="hidden" name="penalty_pid" id="sp_penalty_pid" value="{{ set_pieces.penalty.id if set_pieces.penalty else '' }}">
+        <input type="hidden" name="freekick_r_pid" id="sp_freekick_r_pid" value="{{ set_pieces.freekick_r.id if set_pieces.freekick_r else '' }}">
+        <input type="hidden" name="freekick_l_pid" id="sp_freekick_l_pid" value="{{ set_pieces.freekick_l.id if set_pieces.freekick_l else '' }}">
+        <input type="hidden" name="corner_r_pid" id="sp_corner_r_pid" value="{{ set_pieces.corner_r.id if set_pieces.corner_r else '' }}">
+        <input type="hidden" name="corner_l_pid" id="sp_corner_l_pid" value="{{ set_pieces.corner_l.id if set_pieces.corner_l else '' }}">
 
-          <!-- PLAYER TOKENS ON PITCH -->
-          {% for s in slots %}
-            {% set pos_cls = "pos-gk" if s.slot_pos == "GK" else ("pos-def" if "D" in s.slot_pos else ("pos-mid" if "M" in s.slot_pos else "pos-fwd")) %}
-            <div class="slot {% if not s.player %}empty{% endif %}" 
-                 data-slot="{{ s.slot_index }}" 
-                 data-slotpos="{{ s.slot_pos }}" 
-                 style="left: {{ s.x }}%; top: {{ s.y }}%;">
-              
-              <!-- Position & Captain indicator -->
-              <div class="pos">
-                <span class="badge-pos {{ pos_cls }}">{{ s.slot_pos }}</span>
-                {% if s.is_captain %}
-                  <span class="badge warn" style="margin-left: 4px; padding: 1px 5px; font-size: 11px;">👑 C</span>
-                {% endif %}
-              </div>
+        <!-- HORIZONTAL FOOTBALL PITCH (LEFT GOAL TO RIGHT GOAL) -->
+        <div class="horizontal-pitch" id="horizontalPitch" data-lineup-area="field">
+          <!-- Pitch Grass Stripes (Vertical turf lanes) -->
+          <div class="pitch-stripes-bg"></div>
+          <div class="pitch-role-zones" id="pitchRoleZones" aria-hidden="true">
+            {% for zone in position_zones %}
+              <div class="pitch-role-zone" data-role-zone="{{ zone.position }}" style="left:{{ zone.x1 }}%;top:{{ zone.y1 }}%;width:{{ zone.x2-zone.x1 }}%;height:{{ zone.y2-zone.y1 }}%;"><span>{{ zone.position }}</span></div>
+            {% endfor %}
+          </div>
+          <div class="pitch-role-hint" id="pitchRoleHint" aria-live="polite"></div>
 
-              <!-- Player Name & OVR -->
-              {% if s.player %}
-                <div class="pname" title="{{ s.player.name }}">{{ s.player.name }}</div>
-                <div class="meta">
-                  <b style="color: var(--accent-gold);">★ {{ s.player.overall }}</b> • 
-                  <span style="color: {% if s.player.condition >= 80 %}var(--accent-green){% elif s.player.condition >= 60 %}var(--accent-gold){% else %}var(--accent-red){% endif %};">
-                    ⚡{{ s.player.condition }}%
-                  </span>
-                  {% if s.player.injured %}
-                    • <b style="color: var(--accent-red);">Inj</b>
+          <!-- White Chalk Markings -->
+          <div class="pitch-boundary"></div>
+          <div class="pitch-halfway-line"></div>
+          <div class="pitch-center-circle-h"></div>
+          <div class="pitch-center-spot-h"></div>
+
+          <!-- Penalty & Goal Areas: Left & Right -->
+          <div class="pitch-box-left"></div>
+          <div class="pitch-six-yard-left"></div>
+          <div class="pitch-goal-left"></div>
+
+          <div class="pitch-box-right"></div>
+          <div class="pitch-six-yard-right"></div>
+          <div class="pitch-goal-right"></div>
+
+          <!-- TOP LEFT OVERLAY: CLTT & MENTALITY -->
+          <div class="pitch-badge-overlay">
+            <div class="pbo-cltt">
+              <span class="pbo-stars">⭐⭐⭐⭐⭐</span>
+              <span class="pbo-txt">CLTT <b>{{ cltt_avg }}</b></span>
+            </div>
+            <div class="pbo-mentality">
+              <span class="pbo-dot">🔵</span>
+              <span class="pbo-ment-txt">Cân bằng <b>{{ (cltt_avg / 10)|round(1) }}</b></span>
+            </div>
+          </div>
+
+          <!-- OPPONENT PREVIEW BANNER (VISIBLE ONLY WHEN BUTTON 3 IS ACTIVE) -->
+          <div class="opp-preview-banner" id="oppPreviewBanner" style="display: none;">
+            <div class="opp-tag">🛡️ ĐANG XEM ĐỘI HÌNH ĐỐI THỦ: <b>{{ upcoming_opponent.name if upcoming_opponent else 'Chưa có đối thủ' }}</b> (Sơ đồ {{ upcoming_opponent.formation if upcoming_opponent else '4-4-2' }} • CLTT {{ upcoming_opponent.base_strength if upcoming_opponent else 60.0 }})</div>
+            <button type="button" class="btn-opp-back" onclick="toggleOpponentView()">Quay lại đội của tôi</button>
+          </div>
+
+          <!-- SET-PIECE TAKERS SA BÀN (VISIBLE ONLY WHEN BUTTON 4 IS ACTIVE) -->
+          <div class="setpieces-overlay" id="setPiecesOverlay" style="display: none;">
+            <!-- 1. Corner Right (Phạt góc P) -->
+            <div class="sp-target sp-corner-r" onclick="pickSetPieceTaker('corner_r')" data-role="corner_r" style="left: 12%; top: 12%;">
+              <div class="sp-circle">1</div>
+              <div class="sp-lbl">PHẠT GÓC P</div>
+              <div class="sp-val" id="spVal_corner_r">{{ set_pieces.corner_r.short_name if set_pieces.corner_r else 'Thêm cầu thủ' }}</div>
+            </div>
+
+            <!-- 2. Penalty (Đá phạt đền) -->
+            <div class="sp-target sp-penalty" onclick="pickSetPieceTaker('penalty')" data-role="penalty" style="left: 20%; top: 50%;">
+              <div class="sp-circle">🎯</div>
+              <div class="sp-lbl">ĐÁ PHẠT ĐỀN</div>
+              <div class="sp-val" id="spVal_penalty">{{ set_pieces.penalty.short_name if set_pieces.penalty else 'Thêm cầu thủ' }}</div>
+            </div>
+
+            <!-- 3. Free Kick Right (Đá phạt P) -->
+            <div class="sp-target sp-freekick-r" onclick="pickSetPieceTaker('freekick_r')" data-role="freekick_r" style="left: 30%; top: 32%;">
+              <div class="sp-circle">2</div>
+              <div class="sp-lbl">ĐÁ PHẠT P</div>
+              <div class="sp-val" id="spVal_freekick_r">{{ set_pieces.freekick_r.short_name if set_pieces.freekick_r else 'Thêm cầu thủ' }}</div>
+            </div>
+
+            <!-- 4. Free Kick Left (Đá phạt T) -->
+            <div class="sp-target sp-freekick-l" onclick="pickSetPieceTaker('freekick_l')" data-role="freekick_l" style="left: 30%; top: 68%;">
+              <div class="sp-circle">3</div>
+              <div class="sp-lbl">ĐÁ PHẠT T</div>
+              <div class="sp-val" id="spVal_freekick_l">{{ set_pieces.freekick_l.short_name if set_pieces.freekick_l else 'Thêm cầu thủ' }}</div>
+            </div>
+
+            <!-- 5. Corner Left (Phạt góc T) -->
+            <div class="sp-target sp-corner-l" onclick="pickSetPieceTaker('corner_l')" data-role="corner_l" style="left: 12%; top: 88%;">
+              <div class="sp-circle">4</div>
+              <div class="sp-lbl">PHẠT GÓC T</div>
+              <div class="sp-val" id="spVal_corner_l">{{ set_pieces.corner_l.short_name if set_pieces.corner_l else 'Thêm cầu thủ' }}</div>
+            </div>
+
+            <!-- 6. Đội trưởng (Captain) -->
+            <div class="sp-target sp-captain" onclick="pickSetPieceTaker('captain')" data-role="captain" style="left: 72%; top: 50%;">
+              <div class="sp-circle">👑</div>
+              <div class="sp-lbl">ĐỘI TRƯỞNG</div>
+              <div class="sp-val" id="spVal_captain">{{ set_pieces.captain.short_name if set_pieces.captain else 'Thêm cầu thủ' }}</div>
+            </div>
+          </div>
+
+          <!-- NORMAL STARTING XI TOKENS ON PITCH -->
+          <div class="pitch-tokens-layer" id="pitchTokensLayer">
+            {% for s in slots %}
+              {% set p = s.player %}
+              {% set is_gk = (s.slot_pos == "GK") %}
+              <div class="pitch-token {% if not p %}empty{% endif %}"
+                   id="ptoken_{{ s.slot_index }}"
+                   data-slot="{{ s.slot_index }}"
+                   data-slotpos="{{ s.slot_pos }}"
+                   data-pid="{{ p.id if p else '' }}"
+                   data-lineup-area="pitch"
+                   data-lineup-index="{{ s.slot_index }}"
+                   draggable="{{ 'true' if p else 'false' }}"
+                   role="{{ 'button' if p else 'group' }}"
+                   tabindex="{{ '0' if p else '-1' }}"
+                   aria-label="{{ p.name if p else 'Vị trí trống ' ~ s.slot_pos }}"
+                   data-arrow="{{ s.arrow_trend }}"
+                   onclick="handlePlayerTokenClick({{ s.slot_index }})"
+                   style="left: {{ s.x }}%; top: {{ s.y }}%;">
+
+                <!-- Physical Condition & Morale Overlay (Controlled by Button 2) -->
+                <div class="token-cond-overlay" id="condOverlay_{{ s.slot_index }}" style="display: none;">
+                  {% if p %}
+                    <div class="cond-bar-mini" title="Thể lực {{ p.condition }}%">
+                      <span style="width: {{ p.condition }}%; background: {% if p.condition >= 80 %}#10b981{% elif p.condition >= 60 %}#f59e0b{% else %}#ef4444{% endif %};"></span>
+                    </div>
+                    <span class="mor-ico-mini" title="Tinh thần">
+                      {% if p.morale_arrow == 'up' %}⬆️{% elif p.morale_arrow == 'diag_up' %}↗️{% elif p.morale_arrow == 'level' %}➡️{% else %}↘️{% endif %}
+                    </span>
                   {% endif %}
                 </div>
-              {% else %}
-                <div class="pname">Trống</div>
-                <div class="meta" style="color: var(--text-dim);">Kéo vào đây</div>
-              {% endif %}
 
-              <!-- Actions on Slot -->
-              <div class="slot-actions">
-                <button class="mini star" type="button" data-action="captain" title="Đặt làm Đội trưởng">👑</button>
-                <button class="mini clear" type="button" data-action="clear" title="Tháo khỏi vị trí">✕</button>
+                <!-- Trend Arrow (Controlled by Button 1 & Click): 1 = Up red, -1 = Down blue, 0 = None -->
+                <div class="trend-arrow-box" id="arrowBox_{{ s.slot_index }}">
+                  {% if s.arrow_trend == 1 %}
+                    <span class="trend-arrow arrow-up" title="Xu hướng dâng cao">⬆️</span>
+                  {% elif s.arrow_trend == -1 %}
+                    <span class="trend-arrow arrow-down" title="Xu hướng lùi sâu">⬇️</span>
+                  {% endif %}
+                </div>
+
+                <!-- 3D Player Disc & Jersey Icon -->
+                <div class="token-disc {% if is_gk %}disc-gk{% else %}disc-player{% endif %}">
+                  <div class="disc-jersey">
+                    <svg class="jersey-svg" viewBox="0 0 24 24" width="30" height="30">
+                      <path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z" fill="{% if is_gk %}#eab308{% else %}#ef4444{% endif %}"/>
+                    </svg>
+                    <span class="disc-num">{{ p.shirt_number if p else '?' }}</span>
+                  </div>
+                </div>
+
+                <!-- Golden Stars Under Token -->
+                <div class="token-stars">
+                  {% set star_cnt = p.star_count if p else 1 %}
+                  {% for _ in range(star_cnt) %}★{% endfor %}
+                </div>
+
+                <!-- Player Short Name & Slot Badge -->
+                <div class="token-label-bar">
+                  <span class="token-name" title="{{ p.name if p else 'Trống' }}">
+                    {{ p.short_name if p else 'Trống' }}
+                  </span>
+                  <span class="token-pos-badge pos-{{ s.slot_pos|lower }}">{{ s.slot_pos }}</span>
+                  {% if s.is_captain %}
+                    <span class="token-cap-badge" title="Đội trưởng">
+                      <svg viewBox="0 0 20 20" width="12" height="12" fill="#fbbf24"><path fill-rule="evenodd" d="M10 2l2.5 5 5.5.8-4 3.9.9 5.3-4.9-2.6-4.9 2.6.9-5.3-4-3.9 5.5-.8L10 2z" clip-rule="evenodd"/></svg>
+                    </span>
+                  {% endif %}
+                </div>
               </div>
-            </div>
-          {% endfor %}
-        </div>
-
-        <!-- SAVE BUTTON BAR -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-          <div class="muted" style="font-size: 13px;">
-            💡 Kéo trực tiếp một cầu thủ sang vị trí khác để hoán đổi nhanh.
+            {% endfor %}
           </div>
-          <button class="button primary pulse" type="submit" style="padding: 10px 24px; font-size: 16px;">
-            💾 LƯU ĐỘI HÌNH RA SÂN
+
+          <!-- OPPONENT PREVIEW TOKENS (HIDDEN BY DEFAULT) -->
+          <div class="opp-tokens-layer" id="oppTokensLayer" style="display: none;">
+            {% if upcoming_opponent and upcoming_opponent.players %}
+              {% for op in upcoming_opponent.players %}
+                <div class="pitch-token opp-token" style="left: {{ op.x }}%; top: {{ op.y }}%;">
+                  <div class="token-disc disc-opp">
+                    <div class="disc-jersey">
+                      <svg class="jersey-svg" viewBox="0 0 24 24" width="30" height="30">
+                        <path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z" fill="#0284c7"/>
+                      </svg>
+                      <span class="disc-num">{{ op.number }}</span>
+                    </div>
+                  </div>
+                  <div class="token-stars" style="color: #67e8f9;">★★★½</div>
+                  <div class="token-label-bar">
+                    <span class="token-name">{{ op.name }}</span>
+                    <span class="token-pos-badge" style="background: #0369a1;">{{ op.pos }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- BOTTOM LEFT QUICK SAVE ICON -->
+          <button class="pitch-quick-save-btn" type="button" onclick="submitLineupForm()" title="Lưu đội hình">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z"/><path d="M9 4a1 1 0 012 0v2H9V4z"/></svg>
           </button>
         </div>
       </form>
+
+      <!-- 4 TACTICAL CONTROL BUTTONS ON THE RIGHT (COLUMN OF 4 BLACK SQUARES) -->
+      <div class="pitch-side-controls">
+        <!-- BUTTON 1: TẬP TRUNG / XU HƯỚNG DÂNG CAO (ARROW TREND TOGGLE) -->
+        <button class="side-btn" id="sideBtn_trend" type="button" onclick="toggleTrendMode()" title="Chỉnh xu hướng dâng cao / lùi sâu của cầu thủ">
+          <div class="sb-icon sb-trend-ico">
+            <span class="sb-arrow-left">◀</span>
+            <span class="sb-arrow-right">▶</span>
+          </div>
+          <div class="sb-bar sb-bar-active"></div>
+        </button>
+
+        <!-- BUTTON 2: XEM THỂ LỰC VÀ TRẠNG THÁI TINH THẦN -->
+        <button class="side-btn" id="sideBtn_cond" type="button" onclick="toggleConditionView()" title="Xem thể lực và trạng thái tinh thần của cầu thủ">
+          <div class="sb-icon sb-cond-ico">
+            <span class="sb-badge-mc">MC</span>
+            <span class="sb-arrow-diag">↗</span>
+          </div>
+          <div class="sb-bar" id="sbBar_cond"></div>
+        </button>
+
+        <!-- BUTTON 3: XEM ĐỘI HÌNH ĐỐI THỦ TRẬN SẮP TỚI -->
+        <button class="side-btn" id="sideBtn_opp" type="button" onclick="toggleOpponentView()" title="Xem đội hình và sơ đồ đối thủ trận sắp tới">
+          <div class="sb-icon sb-opp-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.67-3.13 9.04-7 10.18-3.87-1.14-7-5.51-7-10.18V6.3l7-3.12z"/>
+            </svg>
+          </div>
+          <div class="sb-bar" id="sbBar_opp"></div>
+        </button>
+
+        <!-- BUTTON 4: CHỌN CẦU THỦ ĐÁ PHẠT (SET PIECES) -->
+        <button class="side-btn" id="sideBtn_setpieces" type="button" onclick="toggleSetPiecesView()" title="Chọn cầu thủ đá phạt (Phạt đền, đá phạt, phạt góc, đội trưởng)">
+          <div class="sb-icon sb-sp-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z"/>
+            </svg>
+          </div>
+          <div class="sb-bar" id="sbBar_sp"></div>
+        </button>
+      </div>
     </div>
 
-    <!-- RIGHT: SQUAD BENCH / RESERVES TRAY -->
-    <div class="card" style="padding: 16px;">
-      <div class="card-header" style="margin-bottom: 12px; padding-bottom: 8px;">
-        <div class="card-title" style="font-size: 18px;">
-          <span class="icon">👥</span>
-          <span>DỰ BỊ (KÉO THẢ)</span>
+    <p class="pitch-position-help">Hướng tấn công: trái → phải. Kéo tự do để đổi vị trí trên sân; sở trường giữ nguyên. Bật “Khu vực vị trí” để xem ranh giới. Tự động xếp sẽ đưa về sơ đồ mẫu.</p>
+    <!-- SQUAD BENCH & RESERVES TRAY (HORIZONTAL ROW UNDER THE PITCH) -->
+    <div class="squad-bench-section">
+      <div class="bench-tabs-header">
+        <div class="bth-left">
+          <h3 class="bench-group-title" id="benchSubsTitle">
+            ĐỘI HÌNH DỰ BỊ ({{ bench_players|length }})
+          </h3>
         </div>
-        <span class="badge">{{ players|length }} Cầu thủ</span>
+        <div class="bth-right muted">
+          Kéo thả để đổi chỗ · Bấm cầu thủ để xem hồ sơ · Tự lưu sau khi thả
+        </div>
       </div>
 
-      <!-- SEARCH INPUT -->
-      <div style="margin-bottom: 10px;">
-        <input id="playerSearch" type="text" placeholder="🔍 Tìm cầu thủ hoặc vị trí (ST, MC...)..." style="font-size: 13.5px;">
-      </div>
+      <!-- SUBSTITUTES ROW -->
+      <div class="bench-player-row lineup-drop-zone" id="benchSubsRow" data-lineup-area="bench" aria-labelledby="benchSubsTitle">
+        {% for p in bench_players %}
+          <div class="bench-player-token"
+               id="bench_token_{{ p.id }}"
+               data-pid="{{ p.id }}"
+               data-lineup-area="bench"
+               data-lineup-index="{{ loop.index0 }}"
+               draggable="true" role="button" tabindex="0" aria-label="{{ p.name }}"
+               onclick="handleBenchTokenClick({{ p.id }})">
 
-      <!-- POSITION FILTER CHIPS -->
-      <div class="row" style="gap: 5px; margin-bottom: 12px;" id="posFilters">
-        <button type="button" class="mini star" data-filter="all" style="flex: 1;">TẤT CẢ</button>
-        <button type="button" class="mini" data-filter="gk" style="flex: 1;">GK</button>
-        <button type="button" class="mini" data-filter="def" style="flex: 1;">DEF</button>
-        <button type="button" class="mini" data-filter="mid" style="flex: 1;">MID</button>
-        <button type="button" class="mini" data-filter="fwd" style="flex: 1;">FWD</button>
-      </div>
-
-      <!-- DRAGGABLE PLAYER LIST -->
-      <div class="playerlist" id="playerList">
-        {% for p in players %}
-          {% set pos_cls = "pos-gk" if p.position == "GK" else ("pos-def" if "D" in p.position else ("pos-mid" if "M" in p.position else "pos-fwd")) %}
-          {% set cat = "gk" if p.position == "GK" else ("def" if "D" in p.position else ("mid" if "M" in p.position else "fwd")) %}
-          <div class="playercard" draggable="true"
-               data-playerid="{{ p.id }}" 
-               data-name="{{ p.name|lower }}" 
-               data-pos="{{ p.position|lower }}"
-               data-cat="{{ cat }}"
-               data-ovr="{{ p.overall }}" 
-               data-cond="{{ p.condition }}" 
-               data-injured="{{ 1 if p.injured else 0 }}">
-            
-            <div class="top">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="badge-pos {{ pos_cls }}">{{ p.position }}</span>
-                <div>
-                  <div class="name">{{ p.name }}</div>
-                  <div class="sub">{{ p.age }} tuổi • Lương {{ fmt_money(p.salary) }}</div>
-                </div>
-              </div>
-
-              <!-- OVR Rating Shield -->
-              <div class="ovr-shield {% if p.overall >= 75 %}ovr-gold{% elif p.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}">
-                {{ "%.0f"|format(p.overall) }}
-              </div>
+            <div class="bench-disc {% if p.position == 'GK' %}disc-gk{% else %}disc-player{% endif %}">
+              <svg class="jersey-svg" viewBox="0 0 24 24" width="26" height="26">
+                <path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z" fill="{% if p.position == 'GK' %}#eab308{% else %}#ef4444{% endif %}"/>
+              </svg>
+              <span class="disc-num">{{ p.shirt_number }}</span>
             </div>
 
-            <div class="row2">
-              <span class="badge good">⚡ Thể lực {{ p.condition }}%</span>
-              <span class="badge">🔥 Form {{ p.form }}</span>
-              <span class="badge cyan">⭐ Pot {{ p.potential }}</span>
-              {% if p.injured %}
-                <span class="badge bad">Chấn thương</span>
-              {% endif %}
+            <div class="bench-stars">
+              {% for _ in range(p.star_count) %}★{% endfor %}
+            </div>
+
+            <div class="bench-info">
+              <span class="bench-name" title="{{ p.name }}">{{ p.short_name }}</span>
+              <span class="bench-pos-badge pos-{{ p.position|lower }}">{{ p.position }}</span>
             </div>
           </div>
         {% endfor %}
+
+        {% for b_idx in range(bench_players|length, 7) %}
+          <div class="bench-player-token empty bench-empty-slot" data-lineup-area="bench" data-lineup-index="{{ b_idx }}" aria-label="Vị trí dự bị trống">
+            <div class="bench-disc">+</div>
+            <span class="bench-empty-label">Trống</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="bench-tabs-header bench-reserves-header">
+        <h3 class="bench-group-title" id="benchResTitle">ĐỘI HÌNH KHÔNG ĐĂNG KÝ ({{ reserve_players|length }})</h3>
+        <span class="muted">Thả vào khoảng trống bên dưới để bỏ đăng ký</span>
+      </div>
+      <div class="bench-player-row lineup-drop-zone" id="benchResRow" data-lineup-area="reserve" aria-labelledby="benchResTitle">
+        {% for p in reserve_players %}
+          <div class="bench-player-token"
+               id="res_token_{{ p.id }}"
+               data-pid="{{ p.id }}"
+               data-lineup-area="reserve"
+               draggable="true" role="button" tabindex="0" aria-label="{{ p.name }}"
+               onclick="handleBenchTokenClick({{ p.id }})">
+
+            <div class="bench-disc disc-res">
+              <svg class="jersey-svg" viewBox="0 0 24 24" width="26" height="26">
+                <path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z" fill="#64748b"/>
+              </svg>
+              <span class="disc-num">{{ p.shirt_number }}</span>
+            </div>
+
+            <div class="bench-stars">
+              {% for _ in range(p.star_count) %}★{% endfor %}
+            </div>
+
+            <div class="bench-info">
+              <span class="bench-name" title="{{ p.name }}">{{ p.short_name }}</span>
+              <span class="bench-pos-badge pos-{{ p.position|lower }}">{{ p.position }}</span>
+            </div>
+          </div>
+        {% endfor %}
+
+        {% if not reserve_players %}
+          <div class="muted" style="padding: 14px;">Tất cả cầu thủ đã được đăng ký.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <!-- INTERACTIVE DRAG & DROP SCRIPT -->
-  <script>
-  (function(){
-    const pitch = document.getElementById('pitch');
+  <!-- ========================================================================= -->
+  <!-- TAB 1: ĐỘI HÌNH (SQUAD TABLE - MATCHING SCREENSHOT 2)                      -->
+  <!-- ========================================================================= -->
+  <div class="team-tab-content {% if active_tab == 'doihinh' %}active{% endif %}" id="tabPane_doihinh">
+    <div class="squad-table-container">
+
+      <!-- SQUAD FILTER BAR -->
+      <div class="squad-filter-bar">
+        <div class="sfb-left">
+          <select id="squadFilterSelect" onchange="filterSquadTable(this.value)">
+            <option value="all">CHUNG (TẤT CẢ)</option>
+            <option value="starting">ĐÁ CHÍNH</option>
+            <option value="sub">DỰ BỊ</option>
+            <option value="gk">THỦ MÔN (GK)</option>
+            <option value="def">HẬU VỆ (DF)</option>
+            <option value="mid">TIỀN VỆ (MF)</option>
+            <option value="fwd">TIỀN ĐẠO (FW)</option>
+          </select>
+          <span class="badge" style="font-size: 13px;">{{ all_players|length }} Cầu thủ</span>
+        </div>
+        <div class="sfb-right">
+          <input type="text" id="squadSearchInp" placeholder="🔍 Tìm cầu thủ..." oninput="searchSquadTable(this.value)">
+        </div>
+      </div>
+
+      <!-- SQUAD DATA TABLE -->
+      <div class="table-wrap">
+        <table class="te-squad-table" id="teSquadTable">
+          <thead>
+            <tr>
+              <th style="width: 55px;">LCHƠI</th>
+              <th style="width: 40px;">SỐ</th>
+              <th>TÊN CẦU THỦ</th>
+              <th style="width: 60px;">VỊ TRÍ</th>
+              <th style="width: 50px;">QT</th>
+              <th style="width: 45px;">TU</th>
+              <th style="width: 45px;" title="Tình trạng chuyển nhượng">C.N</th>
+              <th style="width: 45px;" title="Năm hợp đồng còn lại">NĂ</th>
+              <th>LƯƠNG</th>
+              <th>GIÁ TRỊ</th>
+              <th style="width: 60px;">P.ĐỘ</th>
+              <th>KNĐB</th>
+              <th style="width: 80px;" title="Tình trạng chấn thương">T.T</th>
+              <th style="width: 110px;">THỂ TRẠNG</th>
+              <th style="width: 50px;">T.THẦN</th>
+              <th>CHẤT LƯỢNG</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in all_players %}
+              {% set pos_cat = "gk" if p.position == "GK" else ("def" if "D" in p.position else ("mid" if "M" in p.position else "fwd")) %}
+              <tr data-cat="{{ pos_cat }}"
+                  data-slot="{{ p.assigned_slot }}"
+                  data-name="{{ p.name|lower }}"
+                  id="squad_tr_{{ p.id }}">
+
+                <!-- 1. VỊ TRÍ ĐANG ĐƯỢC SẮP (LCHƠI) -->
+                <td>
+                  {% if p.assigned_slot != '-' and p.assigned_slot != 'SUB' %}
+                    <span class="slot-tag slot-active">{{ p.assigned_slot }}</span>
+                  {% elif p.assigned_slot == 'SUB' %}
+                    <span class="slot-tag slot-sub">Dự bị</span>
+                  {% else %}
+                    <span class="slot-tag slot-none">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- 2. SỐ ÁO -->
+                <td style="font-weight: 800; color: #94a3b8;">{{ p.shirt_number }}</td>
+
+                <!-- 3. TÊN CẦU THỦ -->
+                <td>
+                  <a href="{{ url_for('player_detail', pid=p.id) }}" class="player-link" data-squad-profile="{{ p.id }}">
+                    <span class="p-avatar">👤</span>
+                    <span class="p-fullname">{{ p.name }}</span>
+                  </a>
+                </td>
+
+                <!-- 4. VỊ TRÍ SỞ TRƯỜNG -->
+                <td>
+                  <span class="pos-badge-solid pos-{{ p.position|lower }}">{{ p.position }}</span>
+                </td>
+
+                <!-- 5. QUỐC TỊCH (CỜ) -->
+                <td style="font-size: 18px;" title="{{ p.nationality }}">
+                  {{ p.nat_flag }}
+                </td>
+
+                <!-- 6. TUỔI -->
+                <td style="font-weight: 600;">{{ p.age }}</td>
+
+                <!-- 7. TÌNH TRẠNG CHUYỂN NHƯỢNG (C.N) -->
+                <td>
+                  <button type="button" class="btn-toggle-transfer"
+                          onclick="toggleTransferStatus({{ p.id }})"
+                          title="Bấm để rao bán hoặc hủy niêm yết">
+                    {% if p.transfer_status == 1 %}
+                      <span class="tr-badge-listed" title="Đang rao bán chuyển nhượng">⚠️</span>
+                    {% else %}
+                      <span class="tr-badge-none" title="Không niêm yết">-</span>
+                    {% endif %}
+                  </button>
+                </td>
+
+                <!-- 8. NĂM HỢP ĐỒNG CÒN LẠI (NĂ) -->
+                <td style="font-weight: 700; color: #e2e8f0;">{{ p.contract_years }}</td>
+
+                <!-- 9. LƯƠNG (LƯƠ) -->
+                <td style="color: #cbd5e1;">{{ fmt_money(p.salary) }}</td>
+
+                <!-- 10. TRỊ GIÁ (GIÁ) -->
+                <td style="font-weight: 700; color: #10b981;">{{ fmt_money(p.market_value) }}</td>
+
+                <!-- 11. PHONG ĐỘ (P.ĐỘ) -->
+                <td>
+                  <span class="badge" style="font-size: 12px; font-weight: 700;">{{ p.form }}</span>
+                </td>
+
+                <!-- 12. KNĐB (TRAITS) -->
+                <td style="font-size: 12px; color: #94a3b8;">
+                  {{ p.traits if p.traits else 'Đa năng' }}
+                </td>
+
+                <!-- 13. TÌNH TRẠNG CHẤN THƯƠNG (T.T) -->
+                <td>
+                  {% if p.injured %}
+                    <span class="inj-badge" title="Nghỉ {{ p.injured_days }} ngày">🚑 {{ p.injured_days }}d</span>
+                  {% else %}
+                    <span class="healthy-badge">✓ Khỏe</span>
+                  {% endif %}
+                </td>
+
+                <!-- 14. THANH THỂ TRẠNG -->
+                <td>
+                  <div class="te-cond-cell">
+                    <div class="te-cond-bar">
+                      <span style="width: {{ p.condition }}%; background: {% if p.condition >= 80 %}#10b981{% elif p.condition >= 60 %}#f59e0b{% else %}#ef4444{% endif %};"></span>
+                    </div>
+                    <span class="te-cond-txt">{{ p.condition }}%</span>
+                  </div>
+                </td>
+
+                <!-- 15. TRẠNG THÁI TINH THẦN -->
+                <td style="font-size: 16px;">
+                  {% if p.morale_arrow == 'up' %}
+                    <span title="Tinh thần: Thăng hoa ({{ p.morale }})">⬆️</span>
+                  {% elif p.morale_arrow == 'diag_up' %}
+                    <span title="Tinh thần: Rất tốt ({{ p.morale }})">↗️</span>
+                  {% elif p.morale_arrow == 'level' %}
+                    <span title="Tinh thần: Ổn định ({{ p.morale }})">➡️</span>
+                  {% else %}
+                    <span title="Tinh thần: Xuống dốc ({{ p.morale }})">↘️</span>
+                  {% endif %}
+                </td>
+
+                <!-- 16. CHẤT LƯỢNG (CHẤT) -->
+                <td>
+                  <div class="cltt-cell">
+                    <b class="cltt-val">{{ "%.0f"|format(p.overall) }}</b>
+                    <span class="cltt-stars-mini">{{ p.cltt_stars }}</span>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: CHIẾN THUẬT TOÀN ĐỘI (AUTO-SAVE - MATCHING SCREENSHOT 5)           -->
+  <!-- ========================================================================= -->
+  <div class="team-tab-content {% if active_tab == 'chienthuat' %}active{% endif %}" id="tabPane_chienthuat">
+    <div class="tactics-modern-wrap">
+
+      <!-- LEFT: STAMINA DRAIN GAUGE & MINI TACTICS PITCH -->
+      <div class="tm-left-col">
+        <!-- Stamina Drain Box -->
+        <div class="stamina-drain-card">
+          <div class="sdc-header">
+            <span class="sdc-icon">⚡</span>
+            <div class="sdc-title">
+              <span class="sdc-sub">TIÊU HAO THỂ LỰC:</span>
+              <span class="sdc-level" id="staminaDrainTxt">{{ tactics_data.stamina_drain_level }}</span>
+            </div>
+          </div>
+          <div class="sdc-gauge">
+            <div class="sdc-bar" id="staminaDrainBar" style="width: {{ tactics_data.stamina_drain_pct }}%;"></div>
+          </div>
+        </div>
+
+        <!-- Mini Visual Pitch: O (Defense) and X (Offense) -->
+        <div class="mini-tactics-pitch">
+          <div class="mtp-border"></div>
+          <div class="mtp-center-circle"></div>
+          <div class="mtp-box-top"></div>
+          <div class="mtp-box-bottom"></div>
+
+          <!-- Defensive markers (O) -->
+          <div class="mtp-marker def" style="left: 25%; top: 78%;">O</div>
+          <div class="mtp-marker def" style="left: 42%; top: 80%;">O</div>
+          <div class="mtp-marker def" style="left: 58%; top: 80%;">O</div>
+          <div class="mtp-marker def" style="left: 75%; top: 78%;">O</div>
+
+          <!-- Midfield markers (X) -->
+          <div class="mtp-marker mid" style="left: 18%; top: 58%;">X</div>
+          <div class="mtp-marker mid" style="left: 50%; top: 56%;">X</div>
+          <div class="mtp-marker mid" style="left: 82%; top: 58%;">X</div>
+
+          <!-- Forward markers (X) -->
+          <div class="mtp-marker fwd" style="left: 50%; top: 28%;">X</div>
+          <div class="mtp-marker fwd" style="left: 32%; top: 38%;">X</div>
+          <div class="mtp-marker fwd" style="left: 68%; top: 38%;">X</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: ADVISOR BANNER & 3 TACTICAL CATEGORIES -->
+      <div class="tm-right-col">
+        <!-- Advisor Recruitment Banner -->
+        <div class="advisor-promo-banner">
+          <div class="apb-content">
+            <div class="apb-headline">NHẬN CỐ VẤN TẠI CỬA HÀNG CLB</div>
+            <div class="apb-sub">Gia tăng chỉ số toàn đội và bẫy việt vị hoàn hảo</div>
+          </div>
+          <a class="btn-apb" href="{{ url_for('market') }}">
+            <span>CHIÊU MỘ CỐ VẤN</span>
+            <span class="apb-star">⭐</span>
+          </a>
+        </div>
+
+        <!-- TACTICS CONTROLS BOX WITH AUTO-SAVE -->
+        <div class="tactics-controls-box">
+
+          <!-- SUB-TABS: KHI KIỂM SOÁT BÓNG | CHUYỂN TRẠNG THÁI | KHÔNG KIỂM SOÁT BÓNG -->
+          <div class="tac-cat-tabs">
+            <button type="button" class="btn-tac-cat" id="btnTacCat_inpos" onclick="switchTacCategory('inpos')">
+              KHI KIỂM SOÁT BÓNG
+            </button>
+            <button type="button" class="btn-tac-cat" id="btnTacCat_trans" onclick="switchTacCategory('trans')">
+              CHUYỂN TRẠNG THÁI
+            </button>
+            <button type="button" class="btn-tac-cat active" id="btnTacCat_outpos" onclick="switchTacCategory('outpos')">
+              KHÔNG KIỂM SOÁT BÓNG
+            </button>
+          </div>
+
+          <!-- SECTION 1: KHÔNG KIỂM SOÁT BÓNG (DEFAULT SHOWN MATCHING SCREENSHOT 5) -->
+          <div class="tac-category-pane active" id="tacPane_outpos">
+
+            <!-- 1. Kiểu kèm người -->
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">🎯</span>
+                <span class="tsr-title">Kiểu kèm người</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.marking_type == 'man' %}active{% endif %}"
+                        onclick="setTacticParam('marking_type', 'man', this)">
+                  KÈM NGƯỜI
+                </button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.marking_type == 'zonal' %}active{% endif %}"
+                        onclick="setTacticParam('marking_type', 'zonal', this)">
+                  KÈM KHU VỰC
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Gây áp lực -->
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">⚡</span>
+                <span class="tsr-title" id="pressureTitle">
+                  Gây áp lực:
+                  <b id="pressureLabelTxt">
+                    {% if tactics_data.pressing_style == 'high' %}Áp sát toàn sân{% elif tactics_data.pressing_style == 'medium' %}Cân bằng{% else %}Phòng ngự lùi sâu{% endif %}
+                  </b>
+                </span>
+              </div>
+              <div class="tsr-stepper">
+                <button type="button" class="btn-step" onclick="stepPressure(-1)">−</button>
+                <div class="stepper-indicator">
+                  <span class="step-pip {% if tactics_data.pressing_style in ['low', 'medium', 'high'] %}active{% endif %}"></span>
+                  <span class="step-pip {% if tactics_data.pressing_style in ['medium', 'high'] %}active{% endif %}"></span>
+                  <span class="step-pip {% if tactics_data.pressing_style == 'high' %}active{% endif %}"></span>
+                </div>
+                <button type="button" class="btn-step" onclick="stepPressure(1)">+</button>
+              </div>
+            </div>
+
+            <!-- 3. Hàng phòng ngự -->
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">⬆️</span>
+                <span class="tsr-title">Hàng phòng ngự</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.defensive_line == 'tight' %}active{% endif %}"
+                        onclick="setTacticParam('defensive_line', 'tight', this)">
+                  KÈM SÁT ĐỐI THỦ
+                </button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.defensive_line == 'offside_trap' %}active{% endif %}"
+                        onclick="setTacticParam('defensive_line', 'offside_trap', this)">
+                  BẪY VIỆT VỊ
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. Kiểu cản phá -->
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">🛡️</span>
+                <span class="tsr-title">Kiểu cản phá</span>
+              </div>
+              <div class="tsr-dropdown">
+                <select class="select-tac-modern" onchange="setTacticParam('tackling_style', this.value)">
+                  <option value="normal" {% if tactics_data.tackling_style == 'normal' %}selected{% endif %}>CÂN BẰNG</option>
+                  <option value="aggressive" {% if tactics_data.tackling_style == 'aggressive' %}selected{% endif %}>QUYẾT LIỆT</option>
+                  <option value="cautious" {% if tactics_data.tackling_style == 'cautious' %}selected{% endif %}>THẬN TRỌNG</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: KHI KIỂM SOÁT BÓNG -->
+          <div class="tac-category-pane" id="tacPane_inpos">
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">🧠</span>
+                <span class="tsr-title">Tư duy tiếp cận</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.mentality == 'defensive' %}active{% endif %}"
+                        onclick="setTacticParam('mentality', 'defensive', this)">PHÒNG NGỰ</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.mentality == 'balanced' %}active{% endif %}"
+                        onclick="setTacticParam('mentality', 'balanced', this)">CÂN BẰNG</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.mentality == 'attacking' %}active{% endif %}"
+                        onclick="setTacticParam('mentality', 'attacking', this)">TẤN CÔNG</button>
+              </div>
+            </div>
+
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">👟</span>
+                <span class="tsr-title">Lối chuyền bóng</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.passing == 'short' %}active{% endif %}"
+                        onclick="setTacticParam('passing', 'short', this)">CHUYỀN NGẮN</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.passing == 'long' %}active{% endif %}"
+                        onclick="setTacticParam('passing', 'long', this)">CHUYỀN DÀI</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.passing not in ['short', 'long'] %}active{% endif %}"
+                        onclick="setTacticParam('passing', 'mixed', this)">HỖN HỢP</button>
+              </div>
+            </div>
+
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">🧭</span>
+                <span class="tsr-title">Khu vực tấn công</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.attacking_focus == 'mixed' %}active{% endif %}"
+                        onclick="setTacticParam('attacking_focus', 'mixed', this)">ĐA DẠNG</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.attacking_focus == 'center' %}active{% endif %}"
+                        onclick="setTacticParam('attacking_focus', 'center', this)">TRUNG LỘ</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.attacking_focus == 'flanks' %}active{% endif %}"
+                        onclick="setTacticParam('attacking_focus', 'flanks', this)">HAI CÁNH</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: CHUYỂN TRẠNG THÁI -->
+          <div class="tac-category-pane" id="tacPane_trans">
+            <div class="tac-setting-row">
+              <div class="tsr-label">
+                <span class="tsr-ico">⚡</span>
+                <span class="tsr-title">Phản công nhanh</span>
+              </div>
+              <div class="tsr-options">
+                <button type="button" class="btn-toggle-tac {% if tactics_data.counter_attack == 'on' %}active{% endif %}"
+                        onclick="setTacticParam('counter_attack', 'on', this)">BẬT</button>
+                <button type="button" class="btn-toggle-tac {% if tactics_data.counter_attack != 'on' %}active{% endif %}"
+                        onclick="setTacticParam('counter_attack', 'off', this)">TẮT</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUTO-SAVE STATUS FOOTER -->
+          <div class="tac-autosave-footer">
+            <span class="as-check">✓</span>
+            <span class="as-text" id="autoSaveStatusTxt">Chiến thuật tự động lưu khi thay đổi</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: TAB NAVIGATION, PITCH CONTROLS, AUTO-SAVE & SWAP LOGIC        -->
+<!-- ========================================================================= -->
+{% include '_squad_player_modal.html' %}
+<script>
+(function(){
+  // --- 1. TAB NAVIGATION ---
+  window.switchTeamTab = function(tabName){
+    document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.team-tab-content').forEach(pane => pane.classList.remove('active'));
+
+    const activeBtn = document.getElementById('tabBtn_' + tabName);
+    const activePane = document.getElementById('tabPane_' + tabName);
+    if(activeBtn) activeBtn.classList.add('active');
+    if(activePane) activePane.classList.add('active');
+
+    // Update browser URL query without reload
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.replaceState({}, '', url);
+  };
+
+  // --- 2. SIDE BUTTON CONTROLS (PITCH 4 BUTTONS) ---
+  let trendMode = false;
+  let conditionView = false;
+  let opponentView = false;
+  let setPiecesView = false;
+
+  // Button 1: Trend Mode (Xu hướng di chuyển: 0 -> 1 -> -1 -> 0)
+  window.toggleTrendMode = function(){
+    trendMode = !trendMode;
+    const btn = document.getElementById('sideBtn_trend');
+    if(btn) btn.classList.toggle('active-mode', trendMode);
+    showToast(trendMode ? "Chế độ chỉnh xu hướng: Bấm vào cầu thủ để đổi Dâng cao ⬆️ / Lùi sâu ⬇️" : "Đã tắt chế độ chỉnh xu hướng");
+  };
+
+  // Button 2: Condition & Morale view toggle
+  window.toggleConditionView = function(){
+    conditionView = !conditionView;
+    const btn = document.getElementById('sideBtn_cond');
+    const bar = document.getElementById('sbBar_cond');
+    if(btn) btn.classList.toggle('active-mode', conditionView);
+    if(bar) bar.classList.toggle('sb-bar-active', conditionView);
+
+    document.querySelectorAll('.token-cond-overlay').forEach(el => {
+      el.style.display = conditionView ? 'flex' : 'none';
+    });
+    showToast(conditionView ? "Hiển thị thể lực & tinh thần cầu thủ" : "Ẩn thể lực & tinh thần");
+  };
+
+  // Button 3: Opponent line-up preview
+  window.toggleOpponentView = function(){
+    opponentView = !opponentView;
+    const btn = document.getElementById('sideBtn_opp');
+    const bar = document.getElementById('sbBar_opp');
+    const banner = document.getElementById('oppPreviewBanner');
+    const oppLayer = document.getElementById('oppTokensLayer');
+    const pitchLayer = document.getElementById('pitchTokensLayer');
+
+    if(btn) btn.classList.toggle('active-mode', opponentView);
+    if(bar) bar.classList.toggle('sb-bar-active', opponentView);
+    if(banner) banner.style.display = opponentView ? 'flex' : 'none';
+    if(oppLayer) oppLayer.style.display = opponentView ? 'block' : 'none';
+    if(pitchLayer) pitchLayer.style.opacity = opponentView ? '0.2' : '1';
+
+    // Close other special layers if open
+    if(opponentView && setPiecesView) toggleSetPiecesView();
+  };
+
+  // Button 4: Set pieces view
+  window.toggleSetPiecesView = function(){
+    setPiecesView = !setPiecesView;
+    const btn = document.getElementById('sideBtn_setpieces');
+    const bar = document.getElementById('sbBar_sp');
+    const overlay = document.getElementById('setPiecesOverlay');
+    const pitchLayer = document.getElementById('pitchTokensLayer');
+
+    if(btn) btn.classList.toggle('active-mode', setPiecesView);
+    if(bar) bar.classList.toggle('sb-bar-active', setPiecesView);
+    if(overlay) overlay.style.display = setPiecesView ? 'block' : 'none';
+    if(pitchLayer) pitchLayer.style.opacity = setPiecesView ? '0.35' : '1';
+
+    if(setPiecesView && opponentView) toggleOpponentView();
+    showToast(setPiecesView ? "Chế độ phân công đá phạt & đội trưởng" : "Đã tắt sa bàn đá phạt");
+  };
+
+  // --- 3. PLAYER TOKEN CLICK ON PITCH ---
+  let lineupSaving = false;
+  let dragSource = null;
+  let showZones = sessionStorage.getItem('lineupShowZones') === '1';
+  const pitchZones = {{ position_zones|tojson }};
+  const pitchBounds = {{ pitch_bounds|tojson }};
+  const pitchElement = document.getElementById('horizontalPitch');
+  const roleHint = document.getElementById('pitchRoleHint');
+  const zonesLayer = document.getElementById('pitchRoleZones');
+  const zonesToggle = document.getElementById('pitchZonesToggle');
+  zonesToggle.setAttribute('aria-pressed', String(showZones));
+  zonesLayer.classList.toggle('visible', showZones);
+  zonesToggle.addEventListener('click', () => {
+    showZones = !showZones;
+    sessionStorage.setItem('lineupShowZones', showZones ? '1' : '0');
+    zonesToggle.setAttribute('aria-pressed', String(showZones));
+    zonesLayer.classList.toggle('visible', showZones);
+  });
+
+  function pointOnPitch(event){
+    const rect = pitchElement.getBoundingClientRect();
+    if(event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return null;
+    const x = Math.max(pitchBounds.minX, Math.min(pitchBounds.maxX, (event.clientX-rect.left)/rect.width*100));
+    const y = Math.max(pitchBounds.minY, Math.min(pitchBounds.maxY, (event.clientY-rect.top)/rect.height*100));
+    const zone = pitchZones.find(z => x>=z.x1 && x<z.x2 && y>=z.y1 && y<z.y2);
+    return {x, y, position: zone.position};
+  }
+  let suppressClickUntil = 0;
+  const lineupForm = document.getElementById('lineupForm');
+  const savedInputs = Array.from(lineupForm.elements, input => [input, input.value]);
+
+  function openPlayerProfile(pid){
+    if(!pid || lineupSaving || Date.now() < suppressClickUntil) return;
+    window.SquadPlayerModal.open(pid);
+  }
+
+  window.handlePlayerTokenClick = function(slotIdx){
+    const token = document.getElementById('ptoken_' + slotIdx);
+    const arrowInput = document.getElementById('arrow_' + slotIdx);
+    if(lineupSaving || Date.now() < suppressClickUntil || opponentView || setPiecesView) return;
+
+    // If trend button is active OR user wants to cycle trend:
+    // Cycle: 0 (none) -> 1 (up) -> -1 (down) -> 0 (none)
+    if(trendMode){
+      let currentTrend = parseInt(arrowInput.value || "0");
+      let nextTrend = 0;
+      if(currentTrend === 0) nextTrend = 1;
+      else if(currentTrend === 1) nextTrend = -1;
+      else nextTrend = 0;
+
+      arrowInput.value = nextTrend;
+      token.dataset.arrow = nextTrend;
+
+      const arrowBox = document.getElementById('arrowBox_' + slotIdx);
+      if(arrowBox){
+        if(nextTrend === 1) arrowBox.innerHTML = '<span class="trend-arrow arrow-up" title="Xu hướng dâng cao">⬆️</span>';
+        else if(nextTrend === -1) arrowBox.innerHTML = '<span class="trend-arrow arrow-down" title="Xu hướng lùi sâu">⬇️</span>';
+        else arrowBox.innerHTML = '';
+      }
+      showToast(nextTrend === 1 ? "Xu hướng: Dâng cao ⬆️" : (nextTrend === -1 ? "Xu hướng: Lùi sâu ⬇️" : "Xu hướng: Trung bình"));
+      return;
+    }
+
+    openPlayerProfile(token.dataset.pid);
+  };
+
+  // --- 4. BENCH TOKEN CLICK ---
+  window.handleBenchTokenClick = function(pid){
+    openPlayerProfile(pid);
+  };
+
+  function assignmentInput(area, index){
+    return document.getElementById((area === 'pitch' ? 'slot_' : 'bench_inp_') + index);
+  }
+
+  function clearDragHighlights(){
+    document.querySelectorAll('.lineup-dragging, .lineup-drop-active').forEach(el => {
+      el.classList.remove('lineup-dragging', 'lineup-drop-active');
+    });
+    zonesLayer.classList.toggle('visible', showZones);
+    zonesLayer.querySelectorAll('.active-role-zone').forEach(el => el.classList.remove('active-role-zone'));
+    roleHint.textContent = '';
+  }
+
+  function dropOnPitch(source, target, event){
+    const point = pointOnPitch(event);
+    if(!point) return;
+    let index = target.dataset.lineupArea === 'pitch' ? Number(target.dataset.lineupIndex) : null;
+    if(index === null){
+      index = source.area === 'pitch' ? Number(source.index) :
+        Array.from({length: 11}, (_, i) => i).find(i => !assignmentInput('pitch', i).value);
+    }
+    if(index === undefined){
+      showToast('Sân đã đủ 11 cầu thủ. Thả lên một cầu thủ để đổi chỗ.');
+      return;
+    }
+    const to = assignmentInput('pitch', index);
+    const from = source.area === 'reserve' ? null : assignmentInput(source.area, source.index);
+    if(from !== to){
+      if(from) from.value = to.value;
+      to.value = source.pid;
+    }
+    document.getElementById('pitch_x_' + index).value = point.x.toFixed(3);
+    document.getElementById('pitch_y_' + index).value = point.y.toFixed(3);
+    submitLineupForm();
+  }
+
+  function dropPlayer(source, target, event){
+    let area = target.dataset.lineupArea;
+    if(area === 'field' || area === 'pitch'){
+      dropOnPitch(source, target, event);
+      return;
+    }
+    let index = target.dataset.lineupIndex;
+    if(area === 'bench' && index === undefined){
+      index = Array.from({length: 7}, (_, i) => i).find(i => !assignmentInput('bench', i).value);
+      if(index === undefined){
+        showToast('Dự bị đã đủ 7 người. Thả lên một cầu thủ để đổi chỗ.');
+        return;
+      }
+    }
+    if(source.area === area && (area === 'reserve' || String(source.index) === String(index))) return;
+    const from = source.area === 'reserve' ? null : assignmentInput(source.area, source.index);
+    const to = area === 'reserve' ? null : assignmentInput(area, index);
+    const replacedPid = to ? to.value : (target.dataset.pid || '');
+    // A drop on a player swaps them; a drop on an empty reserve area unregisters.
+    if(from) from.value = replacedPid;
+    if(to) to.value = source.pid;
+    submitLineupForm();
+  }
+
+  // Pointer dragging works with mouse and touch, while short taps open profiles.
+  let pendingDrag = null;
+  let dragGhost = null;
+  document.addEventListener('dragstart', event => {
+    if(event.target.closest('[draggable="true"][data-lineup-area]')) event.preventDefault();
+  });
+  document.addEventListener('pointerdown', event => {
+    const token = event.target.closest('[draggable="true"][data-lineup-area]');
+    if(!token || event.button !== 0 || lineupSaving || trendMode || opponentView || setPiecesView) return;
+    pendingDrag = {token, x: event.clientX, y: event.clientY, pointerId: event.pointerId};
+  });
+  document.addEventListener('pointermove', event => {
+    if(!pendingDrag || event.pointerId !== pendingDrag.pointerId) return;
+    const {token, x, y} = pendingDrag;
+    if(!dragSource){
+      if(Math.hypot(event.clientX - x, event.clientY - y) < 7) return;
+      dragSource = {area: token.dataset.lineupArea, index: token.dataset.lineupIndex, pid: token.dataset.pid};
+      token.setPointerCapture(event.pointerId);
+      dragGhost = token.cloneNode(true);
+      dragGhost.removeAttribute('id');
+      dragGhost.removeAttribute('data-lineup-area');
+      dragGhost.removeAttribute('onclick');
+      dragGhost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      dragGhost.classList.add('lineup-drag-ghost');
+      dragGhost.setAttribute('aria-hidden', 'true');
+      dragGhost.style.width = token.getBoundingClientRect().width + 'px';
+      document.body.appendChild(dragGhost);
+      token.classList.add('lineup-dragging');
+      zonesLayer.classList.add('visible');
+    }
+    event.preventDefault();
+    dragGhost.style.left = event.clientX + 'px';
+    dragGhost.style.top = event.clientY + 'px';
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-lineup-area]');
+    document.querySelectorAll('.lineup-drop-active').forEach(el => el.classList.remove('lineup-drop-active'));
+    if(target) target.classList.add('lineup-drop-active');
+    const point = pointOnPitch(event);
+    zonesLayer.querySelectorAll('[data-role-zone]').forEach(zone => {
+      zone.classList.toggle('active-role-zone', Boolean(point && zone.dataset.roleZone===point.position));
+    });
+    roleHint.textContent = point ? 'Thả để đá ' + point.position : '';
+    if(event.clientY < 95) window.scrollBy(0, -18);
+    else if(event.clientY > window.innerHeight - 45) window.scrollBy(0, 18);
+  }, {passive: false});
+  function finishDrag(event, cancelled=false){
+    if(!pendingDrag || event.pointerId !== pendingDrag.pointerId) return;
+    const source = dragSource;
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-lineup-area]');
+    if(pendingDrag.token.hasPointerCapture(event.pointerId)) pendingDrag.token.releasePointerCapture(event.pointerId);
+    pendingDrag = null;
+    dragSource = null;
+    if(dragGhost) dragGhost.remove();
+    dragGhost = null;
+    clearDragHighlights();
+    if(!source) return;
+    event.preventDefault();
+    suppressClickUntil = Date.now() + 500;
+    if(target && !cancelled && !lineupSaving) dropPlayer(source, target, event);
+  }
+  document.addEventListener('pointerup', event => finishDrag(event));
+  document.addEventListener('pointercancel', event => finishDrag(event, true));
+  document.addEventListener('keydown', event => {
+    const token = event.target.closest('[data-lineup-area][data-pid]');
+    if(!token || !['Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    if(token.dataset.lineupArea === 'pitch') handlePlayerTokenClick(Number(token.dataset.lineupIndex));
+    else handleBenchTokenClick(token.dataset.pid);
+  });
+
+  // --- 5. SET PIECE TAKER PICKER ---
+  window.pickSetPieceTaker = function(role){
+    const startingPlayers = [];
+    document.querySelectorAll('.pitch-token').forEach(tok => {
+      const pid = tok.dataset.pid;
+      const name = tok.querySelector('.token-name')?.textContent?.trim();
+      if(pid && name && name !== 'Trống') startingPlayers.push({ pid, name });
+    });
+
+    if(startingPlayers.length === 0){
+      alert("Chưa có cầu thủ trên sân.");
+      return;
+    }
+
+    let msg = `Chọn cầu thủ cho vai trò [${role.toUpperCase()}]:\n`;
+    startingPlayers.forEach((p, idx) => {
+      msg += `${idx + 1}. ${p.name}\n`;
+    });
+    const choice = prompt(msg, "1");
+    if(choice && !isNaN(choice)){
+      const selected = startingPlayers[parseInt(choice) - 1];
+      if(selected){
+        const inp = document.getElementById('sp_' + role + '_pid');
+        if(inp) inp.value = selected.pid;
+        const valEl = document.getElementById('spVal_' + role);
+        if(valEl) valEl.textContent = selected.name;
+        showToast(`Đã gán ${selected.name} cho vai trò ${role}`);
+      }
+    }
+  };
+
+  // --- 6. FORMATION CHANGE ---
+  window.changeFormation = function(formName){
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("save_tactics") }}';
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrf_token';
+    csrf.value = '{{ csrf_token() }}';
+    form.appendChild(csrf);
+
+    const fInput = document.createElement('input');
+    fInput.type = 'hidden';
+    fInput.name = 'formation';
+    fInput.value = formName;
+    form.appendChild(fInput);
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  // --- 8. SUBMIT LINEUP FORM VIA AJAX / REGULAR ---
+  window.submitLineupForm = function(){
     const form = document.getElementById('lineupForm');
-    if(!pitch || !form) return;
+    if(!form || lineupSaving) return;
+    lineupSaving = true;
+    document.querySelector('.team-management-wrap').classList.add('lineup-saving');
+    showToast('Đang lưu đội hình…');
+    const formData = new FormData(form);
 
-    let dragId = null;
+    fetch('{{ url_for("save_lineup") }}', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(async res => {
+      if(!res.ok) throw new Error('Không thể lưu đội hình. Vui lòng thử lại.');
+      return res.json();
+    })
+    .then(data => {
+      if(data.ok){
+        showToast("✓ " + (data.message || "Đã lưu đội hình thành công!"));
+        sessionStorage.setItem('lineupScroll', JSON.stringify({x: window.scrollX, y: window.scrollY}));
+        location.reload();
+      } else {
+        throw new Error(data.error || 'Không thể lưu đội hình.');
+      }
+    })
+    .catch(error => {
+      savedInputs.forEach(([input, value]) => { input.value = value; });
+      lineupSaving = false;
+      document.querySelector('.team-management-wrap').classList.remove('lineup-saving');
+      showToast(error.message || 'Không thể lưu đội hình. Vui lòng thử lại.');
+    });
+  };
+  window.addEventListener('load', () => {
+    const scroll = sessionStorage.getItem('lineupScroll');
+    if(!scroll) return;
+    sessionStorage.removeItem('lineupScroll');
+    try {
+      const {x, y} = JSON.parse(scroll);
+      window.scrollTo(x, y);
+    } catch(error) { /* Ignore an expired or malformed scroll position. */ }
+  });
 
-    function getPlayerCard(id){
-      return document.querySelector(`.playercard[data-playerid="${id}"]`);
+  // --- 9. TAB 1: SQUAD TABLE FILTER & SEARCH ---
+  window.filterSquadTable = function(val){
+    const rows = document.querySelectorAll('#teSquadTable tbody tr');
+    rows.forEach(tr => {
+      const cat = tr.dataset.cat;
+      const slot = tr.dataset.slot;
+      let match = true;
+      if(val === 'starting') match = (slot !== '-' && slot !== 'SUB');
+      else if(val === 'sub') match = (slot === 'SUB');
+      else if(val !== 'all') match = (cat === val);
+      tr.style.display = match ? '' : 'none';
+    });
+  };
+
+  window.searchSquadTable = function(q){
+    q = (q || '').trim().toLowerCase();
+    const rows = document.querySelectorAll('#teSquadTable tbody tr');
+    rows.forEach(tr => {
+      const name = tr.dataset.name || '';
+      tr.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+  };
+
+  window.toggleTransferStatus = function(pid){
+    fetch(`/player/${pid}/toggle_transfer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.ok){
+        const tr = document.getElementById('squad_tr_' + pid);
+        const btn = tr?.querySelector('.btn-toggle-transfer');
+        if(btn){
+          btn.innerHTML = data.status === 1 ? '<span class="tr-badge-listed" title="Đang rao bán chuyển nhượng">⚠️</span>' : '<span class="tr-badge-none">-</span>';
+        }
+        showToast(data.status === 1 ? "Đã niêm yết cầu thủ lên thị trường chuyển nhượng" : "Đã hủy niêm yết chuyển nhượng");
+      }
+    });
+  };
+
+  // --- 10. TAB 3: TACTICS & AUTO-SAVE ---
+  window.switchTacCategory = function(catName){
+    document.querySelectorAll('.btn-tac-cat').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tac-category-pane').forEach(p => p.classList.remove('active'));
+
+    const btn = document.getElementById('btnTacCat_' + catName);
+    const pane = document.getElementById('tacPane_' + catName);
+    if(btn) btn.classList.add('active');
+    if(pane) pane.classList.add('active');
+  };
+
+  const tacticsState = {
+    formation: "{{ tactics_data.formation }}",
+    mentality: "{{ tactics_data.mentality }}",
+    pressing: "{{ tactics_data.pressing }}",
+    passing: "{{ tactics_data.passing }}",
+    marking_type: "{{ tactics_data.marking_type }}",
+    pressing_style: "{{ tactics_data.pressing_style }}",
+    defensive_line: "{{ tactics_data.defensive_line }}",
+    tackling_style: "{{ tactics_data.tackling_style }}",
+    attacking_focus: "{{ tactics_data.attacking_focus }}",
+    counter_attack: "{{ tactics_data.counter_attack }}"
+  };
+
+  window.setTacticParam = function(key, val, btnEl){
+    tacticsState[key] = val;
+    if(btnEl && btnEl.parentElement){
+      btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+    }
+    triggerTacticsAutoSave();
+  };
+
+  window.stepPressure = function(dir){
+    const levels = ['low', 'medium', 'high'];
+    let idx = levels.indexOf(tacticsState.pressing_style);
+    if(idx === -1) idx = 0;
+    idx = Math.max(0, Math.min(2, idx + dir));
+    tacticsState.pressing_style = levels[idx];
+    tacticsState.pressing = levels[idx];
+
+    // Update UI
+    const txt = document.getElementById('pressureLabelTxt');
+    if(txt){
+      if(levels[idx] === 'high') txt.textContent = 'Áp sát toàn sân';
+      else if(levels[idx] === 'medium') txt.textContent = 'Cân bằng';
+      else txt.textContent = 'Phòng ngự lùi sâu';
     }
 
-    function slotEl(slotIdx){
-      return document.querySelector(`.slot[data-slot="${slotIdx}"]`);
-    }
+    const pips = document.querySelectorAll('.stepper-indicator .step-pip');
+    pips.forEach((p, pIdx) => {
+      p.classList.toggle('active', pIdx <= idx);
+    });
 
-    function getPosClass(pos){
-      if(!pos) return 'pos-mid';
-      if(pos === 'GK') return 'pos-gk';
-      if(pos.includes('D')) return 'pos-def';
-      if(pos.includes('M')) return 'pos-mid';
-      return 'pos-fwd';
-    }
+    triggerTacticsAutoSave();
+  };
 
-    function setSlot(slotIdx, playerId){
-      // Ensure uniqueness: if player already in another slot, clear that slot
-      const hiddenInputs = form.querySelectorAll('input[type="hidden"][id^="slot_"]');
-      hiddenInputs.forEach(inp=>{
-        if(inp.id !== `slot_${slotIdx}` && inp.value === String(playerId)){
-          clearSlot(Number(inp.id.replace('slot_','')));
+  let autoSaveTimeout = null;
+  function triggerTacticsAutoSave(){
+    const statusTxt = document.getElementById('autoSaveStatusTxt');
+    if(statusTxt) statusTxt.textContent = "Đang lưu thay đổi...";
+
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      fetch('{{ url_for("tactics_autosave") }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(tacticsState)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.ok){
+          if(statusTxt) statusTxt.textContent = "✓ Đã tự động lưu thành công lúc " + new Date().toLocaleTimeString();
+          const drainTxt = document.getElementById('staminaDrainTxt');
+          const drainBar = document.getElementById('staminaDrainBar');
+          if(drainTxt) drainTxt.textContent = data.drain_level;
+          if(drainBar) drainBar.style.width = data.drain_pct + '%';
         }
       });
+    }, 300);
+  }
 
-      const inp = document.getElementById(`slot_${slotIdx}`);
-      if(inp) inp.value = String(playerId);
-
-      const card = getPlayerCard(playerId);
-      const s = slotEl(slotIdx);
-      if(!card || !s) return;
-
-      const name = card.querySelector('.name')?.textContent || 'Player';
-      const pos = card.dataset.pos?.toUpperCase() || '';
-      const ovr = card.dataset.ovr || '';
-      const cond = card.dataset.cond || '';
-      const injured = card.dataset.injured === '1';
-
-      const slotPos = s.dataset.slotpos || '';
-      const isCap = (document.getElementById('captain_slot')?.value === String(slotIdx));
-      const crown = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
-      const posCls = getPosClass(slotPos);
-
-      s.classList.remove('empty');
-      s.querySelector('.pos').innerHTML = `<span class="badge-pos ${posCls}">${slotPos}</span>${crown}`;
-      s.querySelector('.pname').textContent = name;
-      s.querySelector('.meta').innerHTML = `<b style="color: var(--accent-gold);">★ ${ovr}</b> • <span style="color:${cond >= 80 ? 'var(--accent-green)' : (cond >= 60 ? 'var(--accent-gold)' : 'var(--accent-red)')}">⚡${cond}%</span>` + (injured ? ` • <b style="color: var(--accent-red);">Inj</b>` : '');
+  // --- 11. TOAST NOTIFICATION UTILITY ---
+  function showToast(msg){
+    let t = document.getElementById('globalTeamToast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = 'globalTeamToast';
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#00e676;border:1px solid #10b981;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;';
+      document.body.appendChild(t);
     }
-
-    function clearSlot(slotIdx){
-      const inp = document.getElementById(`slot_${slotIdx}`);
-      if(inp) inp.value = '';
-      const s = slotEl(slotIdx);
-      if(!s) return;
-      const slotPos = s.dataset.slotpos || '';
-      const isCap = (document.getElementById('captain_slot')?.value === String(slotIdx));
-      const crown = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
-      const posCls = getPosClass(slotPos);
-
-      s.classList.add('empty');
-      s.querySelector('.pos').innerHTML = `<span class="badge-pos ${posCls}">${slotPos}</span>${crown}`;
-      s.querySelector('.pname').innerHTML = 'Trống';
-      s.querySelector('.meta').textContent = 'Kéo vào đây';
-    }
-
-    // Drag start for player cards
-    document.querySelectorAll('.playercard').forEach(card=>{
-      card.addEventListener('dragstart', (e)=>{
-        dragId = card.dataset.playerid;
-        e.dataTransfer.setData('text/plain', dragId);
-        card.style.opacity = '0.5';
-      });
-      card.addEventListener('dragend', ()=>{
-        card.style.opacity = '1';
-      });
-    });
-
-    // Slots as drop targets
-    document.querySelectorAll('.slot').forEach(s=>{
-      s.addEventListener('dragover', (e)=>{ 
-        e.preventDefault(); 
-        s.classList.add('dragover'); 
-      });
-      s.addEventListener('dragleave', ()=> s.classList.remove('dragover'));
-      s.addEventListener('drop', (e)=>{
-        e.preventDefault();
-        s.classList.remove('dragover');
-        const pid = e.dataTransfer.getData('text/plain') || dragId;
-        if(!pid) return;
-        setSlot(Number(s.dataset.slot), pid);
-      });
-
-      // Buttons
-      s.querySelectorAll('button[data-action]').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const action = btn.dataset.action;
-          const idx = Number(s.dataset.slot);
-          if(action === 'clear'){
-            clearSlot(idx);
-          }
-          if(action === 'captain'){
-            document.getElementById('captain_slot').value = String(idx);
-            // update crowns
-            document.querySelectorAll('.slot').forEach(ss=>{
-              const sp = ss.dataset.slotpos || '';
-              const isCap = document.getElementById('captain_slot').value === String(ss.dataset.slot);
-              const crown2 = isCap ? ' <span class="badge warn" style="margin-left:4px; padding: 1px 5px; font-size: 11px;">👑 C</span>' : '';
-              const posCls = getPosClass(sp);
-              const posEl = ss.querySelector('.pos');
-              if(posEl) posEl.innerHTML = `<span class="badge-pos ${posCls}">${sp}</span>${crown2}`;
-            });
-          }
-        });
-      });
-    });
-
-    // Search and Position filter
-    const search = document.getElementById('playerSearch');
-    const list = document.getElementById('playerList');
-    const posFilterBtns = document.querySelectorAll('#posFilters button');
-    let currentFilter = 'all';
-
-    function applyFilter(){
-      const q = (search?.value || '').trim().toLowerCase();
-      list?.querySelectorAll('.playercard').forEach(card=>{
-        const name = card.dataset.name || '';
-        const pos = card.dataset.pos || '';
-        const cat = card.dataset.cat || '';
-        const matchSearch = !q || name.includes(q) || pos.includes(q);
-        const matchFilter = (currentFilter === 'all') || (cat === currentFilter);
-        card.style.display = (matchSearch && matchFilter) ? '' : 'none';
-      });
-    }
-
-    if(search) search.addEventListener('input', applyFilter);
-
-    posFilterBtns.forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        posFilterBtns.forEach(b=>b.classList.remove('star'));
-        btn.classList.add('star');
-        currentFilter = btn.dataset.filter;
-        applyFilter();
-      });
-    });
-  })();
-  </script>
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2200);
+  }
+})();
+</script>
 {% endblock %}

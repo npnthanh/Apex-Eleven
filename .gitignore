@@ -15,3 +15,6 @@ env/
 .vscode/
 .idea/
 *.log
+
+# Private accounts, save files and session signing key
+instance/

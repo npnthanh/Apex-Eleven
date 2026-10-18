@@ -75,6 +75,7 @@
         <div style="margin-top: 20px; text-align: center;">
           {% if can_play %}
             <form method="post" action="{{ url_for('friendly_play') }}" style="margin: 0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="button primary pulse" type="submit" style="padding: 12px 32px; font-size: 18px; width: 100%;">
                 ⚔️ BẮT ĐẦU ĐÁ GIAO HỮU NGAY
               </button>

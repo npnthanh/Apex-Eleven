@@ -3,107 +3,786 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ club.name }} - Băng Ghế Chỉ Đạo | Top Eleven Edition</title>
-  
+  <title>{% block title %}{{ club.name }} - Top Eleven Edition{% endblock %}</title>
+
   <!-- Modern Sports / Gaming Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Outfit:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
-  
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="te-game-body">
   <!-- TOP ELEVEN HUD HEADER -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="crest" title="Crest của {{ club.name }}">
-        ⚽
+  <header class="topbar-hud">
+    <!-- LEFT: PAGE TITLE & AGE REGULATION DISCLAIMER -->
+    <div class="topbar-left">
+      <div class="hud-home-title">
+        <span class="hud-main-title">{% block page_title %}SÂN NHÀ{% endblock %}</span>
+        <span class="hud-day-badge">Ngày {{ club.season_day }}</span>
       </div>
-      <div class="brand-details">
-        <div class="game-title">
-          Băng Ghế Chỉ Đạo
-          <span class="tag-proto">V3</span>
-        </div>
-        <div class="brand-sub">
-          <b>{{ club.name }}</b>
-          <span>•</span>
-          <span class="season-badge">Ngày {{ club.season_day }}</span>
-        </div>
+      <div class="hud-disclaimer" title="Quy định giờ chơi game">
+        <span class="hud-age-tag">12+</span>
+        <span class="hud-disclaimer-text">Chơi game quá 180 phút mỗi ngày sẽ ảnh hưởng xấu đến sức khỏe</span>
       </div>
     </div>
 
-    <!-- WALLET & QUICK DAY ADVANCE -->
-    <div class="wallet">
-      <div class="pill-currency cash" title="Quỹ ngân sách CLB">
-        <span class="curr-icon">$</span>
-        <span class="curr-val">{{ fmt_money(club.cash) }}</span>
+    <!-- RIGHT: MANAGER LEVEL, 5 RESOURCES, ADVANCE DAY & PROFILE -->
+    <div class="topbar-right">
+      <!-- VIP / MANAGER LEVEL BADGE -->
+      <a class="hud-vip-badge" href="{{ url_for('club_profile') }}" title="Cấp độ Câu Lạc Bộ • Xem Hồ Sơ & Thống Kê">
+        <svg class="hud-vip-svg" viewBox="0 0 32 32" width="22" height="22" fill="none">
+          <defs>
+            <linearGradient id="vipGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fde047"/>
+              <stop offset="50%" stop-color="#eab308"/>
+              <stop offset="100%" stop-color="#ca8a04"/>
+            </linearGradient>
+            <linearGradient id="vipPurpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6"/>
+              <stop offset="100%" stop-color="#4c1d95"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 3 L27 7 V16 C27 23 16 29 16 29 C16 29 5 23 5 16 V7 Z" fill="url(#vipPurpleGrad)" stroke="url(#vipGoldGrad)" stroke-width="2"/>
+          <path d="M16 7 L18.5 12 L24 12.8 L20 16.6 L21 22 L16 19.4 L11 22 L12 16.6 L8 12.8 L13.5 12 Z" fill="url(#vipGoldGrad)"/>
+        </svg>
+        <span class="vip-level">{{ club.club_level if club and 'club_level' in club.keys() else 1 }}</span>
+      </a>
+
+      <!-- 5 RESOURCES HUD IN REQUIRED ORDER -->
+      <div class="resources-dock">
+        <!-- 1. TIỀN VÀNG (TOKENS) -->
+        <div class="res-badge res-token" title="Tiền vàng (Tokens) - Dùng đấu giá & giao dịch VIP">
+          <span class="res-ico">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <defs>
+                <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fef08a"/>
+                  <stop offset="40%" stop-color="#eab308"/>
+                  <stop offset="100%" stop-color="#92400e"/>
+                </linearGradient>
+                <linearGradient id="innerCoin" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ca8a04"/>
+                  <stop offset="100%" stop-color="#78350f"/>
+                </linearGradient>
+              </defs>
+              <circle cx="14" cy="14" r="12" fill="url(#coinGrad)" stroke="#fef08a" stroke-width="1.2"/>
+              <circle cx="14" cy="14" r="9.5" fill="url(#innerCoin)" stroke="#fde047" stroke-width="0.8"/>
+              <text x="14" y="19" font-family="'Rajdhani', sans-serif" font-size="13" font-weight="900" fill="#fef08a" text-anchor="middle">T</text>
+            </svg>
+          </span>
+          <span class="res-val" id="hudTokensVal">{{ club.tokens }}</span>
+          <button class="btn-res-add" type="button" onclick="openResourceModal('token')" title="Thêm Tiền Vàng">+</button>
+        </div>
+
+        <!-- 2. THẺ SỨC KHỎE (REST PACKS / VÉ NGHỈ NGƠI) -->
+        <div class="res-badge res-rest" title="Thẻ sức khỏe (Vé nghỉ ngơi) - Hồi phục thể lực cầu thủ">
+          <span class="res-ico">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <defs>
+                <linearGradient id="restGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#34d399"/>
+                  <stop offset="100%" stop-color="#047857"/>
+                </linearGradient>
+              </defs>
+              <circle cx="14" cy="15" r="10" fill="url(#restGrad)" stroke="#6ee7b7" stroke-width="1.2"/>
+              <rect x="12" y="2" width="4" height="4" rx="1.5" fill="#a7f3d0"/>
+              <circle cx="14" cy="15" r="7.5" fill="#064e3b" stroke="#34d399" stroke-width="0.8"/>
+              <path d="M14 10 V15 H18" stroke="#6ee7b7" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="res-val" id="hudRestVal">{{ club.rest_packs or 0 }}</span>
+          <button class="btn-res-add" type="button" onclick="openResourceModal('rest')" title="Thêm Thẻ Sức Khỏe">+</button>
+        </div>
+
+        <!-- 3. THẺ TINH THẦN (MORALE PACKS / TĂNG TINH THẦN) -->
+        <div class="res-badge res-morale" title="Thẻ tinh thần - Tăng hưng phấn & phong độ cầu thủ">
+          <span class="res-ico">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <defs>
+                <linearGradient id="moraleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8"/>
+                  <stop offset="50%" stop-color="#0284c7"/>
+                  <stop offset="100%" stop-color="#0369a1"/>
+                </linearGradient>
+              </defs>
+              <rect x="3" y="3" width="22" height="22" rx="7" fill="url(#moraleGrad)" stroke="#7dd3fc" stroke-width="1.2"/>
+              <path d="M16 5 L8 15 H14 L12 23 L20 13 H14 Z" fill="#ffffff" stroke="#bae6fd" stroke-width="0.8" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="res-val" id="hudMoraleVal">{{ club.morale_packs or 0 }}</span>
+          <button class="btn-res-add" type="button" onclick="openResourceModal('morale')" title="Thêm Thẻ Tinh Thần">+</button>
+        </div>
+
+        <!-- 4. THẺ CHẤN THƯƠNG (MEDICAL PACKS / VÉ TRỊ THƯƠNG) -->
+        <div class="res-badge res-injury" title="Thẻ chấn thương (Vé trị thương) - Hồi phục y tế nhanh">
+          <span class="res-ico">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <defs>
+                <linearGradient id="medGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f43f5e"/>
+                  <stop offset="100%" stop-color="#9f1239"/>
+                </linearGradient>
+              </defs>
+              <rect x="3" y="4" width="22" height="20" rx="6" fill="url(#medGrad)" stroke="#fecdd3" stroke-width="1.2"/>
+              <rect x="9" y="1.5" width="10" height="4" rx="1.5" stroke="#fecdd3" stroke-width="1.2" fill="none"/>
+              <rect x="12" y="9" width="4" height="10" rx="1" fill="#ffffff"/>
+              <rect x="9" y="12" width="10" height="4" rx="1" fill="#ffffff"/>
+            </svg>
+          </span>
+          <span class="res-val" id="hudInjuryVal">{{ club.injury_packs or 0 }}</span>
+          <button class="btn-res-add" type="button" onclick="openResourceModal('injury')" title="Thêm Thẻ Chấn Thương">+</button>
+        </div>
+
+        <!-- 5. TIỀN MẶT (CASH / NGÂN SÁCH) -->
+        <div class="res-badge res-cash" title="Tiền mặt CLB - Nâng cấp sân & trả lương">
+          <span class="res-ico">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <defs>
+                <linearGradient id="cashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#4ade80"/>
+                  <stop offset="100%" stop-color="#15803d"/>
+                </linearGradient>
+              </defs>
+              <rect x="2" y="6" width="24" height="16" rx="4" fill="url(#cashGrad)" stroke="#86efac" stroke-width="1.2"/>
+              <circle cx="14" cy="14" r="5" fill="#14532d" stroke="#86efac" stroke-width="0.8"/>
+              <text x="14" y="18" font-family="'Rajdhani', sans-serif" font-size="12" font-weight="900" fill="#86efac" text-anchor="middle">$</text>
+            </svg>
+          </span>
+          <span class="res-val" id="hudCashVal">{{ fmt_money(club.cash) }}</span>
+          <button class="btn-res-add" type="button" onclick="openResourceModal('cash')" title="Thêm Tiền Mặt">+</button>
+        </div>
       </div>
 
-      <div class="pill-currency token" title="Tokens đặc biệt để đấu giá / tính năng VIP">
-        <span class="curr-icon">🪙</span>
-        <span class="curr-val">{{ club.tokens }}</span>
-      </div>
-
+      <!-- SANG NGÀY THI ĐẤU -->
       <form method="post" action="{{ url_for('do_advance_day') }}" style="margin: 0;">
-        <button class="btn-advance-hud" type="submit" title="Chuyển sang ngày thi đấu tiếp theo">
-          <span>⏭️</span>
-          <span>Sang ngày</span>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn-advance-te" type="submit" title="Chuyển sang ngày thi đấu tiếp theo (Ngày {{ club.season_day + 1 }})">
+          <span class="adv-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M4 4 L14 12 L4 20 Z M14 4 L20 12 L14 20 Z"/>
+            </svg>
+          </span>
+          <span class="adv-text">Sang ngày</span>
         </button>
       </form>
+
+      <!-- USER ACCOUNT & SETTINGS -->
+      <div class="account-pill" onclick="openSettingsModal()" style="cursor: pointer;" title="Tài khoản: {{ current_user.username }} - Bấm để xem thông tin, đổi mật khẩu, đăng xuất">
+        <span class="account-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 2 C9.2 2 7 4.2 7 7 C7 9.8 9.2 12 12 12 C14.8 12 17 9.8 17 7 C17 4.2 14.8 2 12 2 Z M4 21 C4 17.5 7.6 15 12 15 C16.4 15 20 17.5 20 21 Z"/>
+          </svg>
+        </span>
+        <span class="account-name">{{ current_user.username }}</span>
+        <button class="btn-logout" type="button" onclick="event.stopPropagation(); openSettingsModal();" title="Thiết lập & Tài khoản">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19.14 12.94 C19.18 12.63 19.2 12.32 19.2 12 C19.2 11.68 19.18 11.37 19.14 11.06 L21.16 9.48 C21.34 9.34 21.39 9.08 21.28 8.88 L19.36 5.56 C19.25 5.36 19 5.28 18.79 5.36 L16.42 6.32 C15.93 5.94 15.39 5.63 14.8 5.39 L14.44 2.86 C14.41 2.63 14.21 2.46 13.98 2.46 H10.02 C9.79 2.46 9.59 2.63 9.56 2.86 L9.2 5.39 C8.61 5.63 8.07 5.94 7.58 6.32 L5.21 5.36 C5 5.28 4.75 5.36 4.64 5.56 L2.72 8.88 C2.61 9.08 2.66 9.34 2.84 9.48 L4.86 11.06 C4.82 11.37 4.8 11.68 4.8 12 C4.8 12.32 4.82 12.63 4.86 12.94 L2.84 14.52 C2.66 14.66 2.61 14.92 2.72 15.12 L4.64 18.44 C4.75 18.64 5 18.72 5.21 18.64 L7.58 17.68 C8.07 18.06 8.61 18.37 9.2 18.61 L9.56 21.14 C9.59 21.37 9.79 21.54 10.02 21.54 H13.98 C14.21 21.54 14.41 21.37 14.44 21.14 L14.8 18.61 C15.39 18.37 15.93 18.06 16.42 17.68 L18.79 18.64 C19 18.72 19.25 18.64 19.36 18.44 L21.28 15.12 C21.39 14.92 21.34 14.66 21.16 14.52 L19.14 12.94 Z M12 15.5 C10.07 15.5 8.5 13.93 8.5 12 C8.5 10.07 10.07 8.5 12 8.5 C13.93 8.5 15.5 10.07 15.5 12 C15.5 13.93 13.93 15.5 12 15.5 Z"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- GAME NAVIGATION DOCK -->
-  <nav class="nav-dock">
-    <a class="{% if request.endpoint=='home' %}active{% endif %}" href="{{ url_for('home') }}">
-      <span>🏠</span> Tổng quan
-    </a>
-    <a class="{% if request.endpoint in ['lineup','save_lineup','lineup_autopick','lineup_clear'] %}active{% endif %}" href="{{ url_for('lineup') }}">
-      <span>🧲</span> Đội hình chính
-    </a>
-    <a class="{% if request.endpoint=='squad' %}active{% endif %}" href="{{ url_for('squad') }}">
-      <span>👥</span> Danh sách
-    </a>
-    <a class="{% if request.endpoint=='tactics' %}active{% endif %}" href="{{ url_for('tactics') }}">
-      <span>🎛️</span> Chiến thuật
-    </a>
-    <a class="{% if request.endpoint in ['training','do_training'] %}active{% endif %}" href="{{ url_for('training') }}">
-      <span>🏋️</span> Tập luyện
-    </a>
-    <a class="{% if request.endpoint in ['market','bid'] %}active{% endif %}" href="{{ url_for('market') }}">
-      <span>🛒</span> Chợ đấu giá
-    </a>
-    <a class="{% if request.endpoint in ['facilities','upgrade'] %}active{% endif %}" href="{{ url_for('facilities') }}">
-      <span>🏟️</span> Cơ sở vật chất
-    </a>
-    <a class="{% if request.endpoint in ['competitions','play_fixture'] %}active{% endif %}" href="{{ url_for('competitions') }}">
-      <span>🏆</span> Đấu trường
-    </a>
-    <a class="{% if request.endpoint in ['friendly','friendly_play'] %}active{% endif %}" href="{{ url_for('friendly') }}">
-      <span>🤝</span> Giao hữu
-    </a>
-  </nav>
+  <!-- MAIN APP LAYOUT: SIDEBAR ON THE LEFT + CONTENT ON THE RIGHT -->
+  <div class="app-layout">
+    <!-- LEFT NAVIGATION DOCK: VERTICAL ICONS WITH GAMING TOOLTIPS & NOTIFICATION BADGES -->
+    <aside class="sidebar-dock" aria-label="Thanh điều hướng chính">
+      <!-- 1. SÂN NHÀ (HOME) - ICON NAM CHÂM TOP ELEVEN -->
+      <a class="nav-icon-btn {% if request.endpoint=='home' %}active{% endif %}" href="{{ url_for('home') }}" data-tooltip="Sân nhà (Trang chủ)">
+        <span class="ni-icon">
+          <!-- Nam châm Top Eleven (Hồng đỏ - cực bạc kim loại) -->
+          <svg class="ni-svg magnet-svg" viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="magGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff3b69"/>
+                <stop offset="100%" stop-color="#e11d48"/>
+              </linearGradient>
+              <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#94a3b8"/>
+              </linearGradient>
+            </defs>
+            <path d="M10 23 V14 C10 9.5 13.5 6 18 6 C22.5 6 26 9.5 26 14 V23 H21 V14 C21 12.3 19.7 11 18 11 C16.3 11 15 12.3 15 14 V23 Z" fill="url(#magGrad)"/>
+            <rect x="10" y="22" width="5" height="7" rx="1.5" fill="url(#silverGrad)"/>
+            <rect x="21" y="22" width="5" height="7" rx="1.5" fill="url(#silverGrad)"/>
+          </svg>
+        </span>
+      </a>
 
-  <!-- MAIN GAME CONTAINER -->
-  <main class="container">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flashwrap">
-          {% for m in messages %}
-            <div class="flash">
-              <span style="font-size: 20px;">📣</span>
-              <span>{{ m }}</span>
+      <!-- 2. ĐỘI BÓNG (LINEUP / TEAM - GỒM CẢ 3 TAB: SƠ ĐỒ, ĐỘI HÌNH, CHIẾN THUẬT) -->
+      <a class="nav-icon-btn {% if request.endpoint in ['lineup','team','squad','tactics','save_lineup','lineup_autopick','lineup_clear'] %}active{% endif %}" href="{{ url_for('lineup') }}" data-tooltip="Đội bóng (Sơ đồ, Đội hình, Chiến thuật)">
+        <span class="ni-icon">
+          <svg class="ni-svg squad-purple-svg" viewBox="0 0 36 36" width="32" height="32" fill="none">
+            <defs>
+              <linearGradient id="purpleHead1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#c084fc"/>
+                <stop offset="100%" stop-color="#7e22ce"/>
+              </linearGradient>
+              <linearGradient id="purpleHead2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#a855f7"/>
+                <stop offset="100%" stop-color="#6b21a8"/>
+              </linearGradient>
+            </defs>
+            <circle cx="12.5" cy="11.5" r="4.8" fill="url(#purpleHead1)"/>
+            <path d="M5.5 26.5 C5.5 20.5 8.5 18 13.5 18 C17.5 18 19 20 19.5 23 C19.5 24.5 18 26.5 16.5 26.5 Z" fill="url(#purpleHead1)"/>
+            <circle cx="23.5" cy="11.5" r="4.8" fill="url(#purpleHead2)"/>
+            <path d="M16.5 26.5 C17 21.5 19.5 18 23.5 18 C28.5 18 30.5 20.5 30.5 26.5 Z" fill="url(#purpleHead2)"/>
+          </svg>
+        </span>
+        <span class="ni-badge badge-team-cyan">!</span>
+      </a>
+
+      <!-- 3. TẬP LUYỆN (TRAINING) -->
+      <a class="nav-icon-btn {% if request.endpoint in ['training','do_training'] %}active{% endif %}" href="{{ url_for('training') }}" data-tooltip="Sân tập huấn luyện">
+        <span class="ni-icon">
+          <!-- SVG Dumbbell / Training 3D Orange-Gold -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="trainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fb923c"/>
+                <stop offset="100%" stop-color="#ea580c"/>
+              </linearGradient>
+            </defs>
+            <rect x="7" y="16" width="22" height="4" rx="2" fill="#e2e8f0"/>
+            <rect x="4" y="10" width="5" height="16" rx="2.5" fill="url(#trainGrad)" stroke="#fed7aa" stroke-width="1"/>
+            <rect x="9" y="12" width="4" height="12" rx="2" fill="#c2410c"/>
+            <rect x="27" y="10" width="5" height="16" rx="2.5" fill="url(#trainGrad)" stroke="#fed7aa" stroke-width="1"/>
+            <rect x="23" y="12" width="4" height="12" rx="2" fill="#c2410c"/>
+          </svg>
+        </span>
+        <span class="ni-badge badge-warn">!</span>
+      </a>
+
+      <!-- 4. ĐẤU TRƯỜNG & LỊCH THI ĐẤU (COMPETITIONS) -->
+      <a class="nav-icon-btn {% if request.endpoint in ['competitions','play_fixture'] %}active{% endif %}" href="{{ url_for('competitions') }}" data-tooltip="Lịch thi đấu & Đấu trường">
+        <span class="ni-icon">
+          <!-- SVG Trophy Champion Cup 3D Gold -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="trophyGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="40%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#b45309"/>
+              </linearGradient>
+            </defs>
+            <path d="M12 8 H24 V18 C24 22 20 25 18 25 C16 25 12 22 12 18 Z" fill="url(#trophyGold)" stroke="#fde047" stroke-width="1"/>
+            <path d="M12 11 C8 11 6 15 10 18 C11.5 19 12 18 12 18" stroke="#fbbf24" stroke-width="2" fill="none"/>
+            <path d="M24 11 C28 11 30 15 26 18 C24.5 19 24 18 24 18" stroke="#fbbf24" stroke-width="2" fill="none"/>
+            <path d="M16 25 H20 V28 H16 Z" fill="#92400e"/>
+            <rect x="13" y="28" width="10" height="4" rx="1.5" fill="url(#trophyGold)"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- 5. THỊ TRƯỜNG CHUYỂN NHƯỢNG (MARKET) -->
+      <a class="nav-icon-btn {% if request.endpoint=='market' %}active{% endif %}" href="{{ url_for('market') }}" data-tooltip="Thị trường chuyển nhượng">
+        <span class="ni-icon">
+          <!-- SVG Transfer Player Card & Exchange Arrows 3D -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="marketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#34d399"/>
+                <stop offset="100%" stop-color="#059669"/>
+              </linearGradient>
+            </defs>
+            <rect x="7" y="6" width="16" height="22" rx="3.5" fill="url(#marketGrad)" stroke="#a7f3d0" stroke-width="1.2"/>
+            <circle cx="15" cy="13" r="4" fill="#ecfdf5"/>
+            <path d="M10 23 C10 19.5 12 18 15 18 C18 18 20 19.5 20 23 Z" fill="#ecfdf5"/>
+            <!-- 2 Exchange Neon Arrows -->
+            <path d="M22 14 L28 14 L25 11 M28 14 L25 17" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M26 24 L20 24 L23 27 M20 24 L23 21" stroke="#facc15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- 6. HỌC VIỆN BÓNG ĐÁ TRẺ (YOUTH ACADEMY) -->
+      <a class="nav-icon-btn {% if request.endpoint in ['youth','youth_train'] %}active{% endif %}" href="{{ url_for('youth') }}" data-tooltip="Học viện bóng đá trẻ">
+        <span class="ni-icon">
+          <!-- SVG Graduate Cap & Star 3D -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="youthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#1d4ed8"/>
+              </linearGradient>
+            </defs>
+            <polygon points="18,7 31,14 18,21 5,14" fill="url(#youthGrad)" stroke="#93c5fd" stroke-width="1"/>
+            <path d="M10 17 V24 C10 27.5 18 29.5 18 29.5 C18 29.5 26 27.5 26 24 V17" fill="none" stroke="#60a5fa" stroke-width="2"/>
+            <circle cx="28" cy="22" r="4.5" fill="#facc15" stroke="#fef08a" stroke-width="1"/>
+            <text x="28" y="24.5" font-size="7" font-weight="900" fill="#78350f" text-anchor="middle">★</text>
+          </svg>
+        </span>
+        <span class="ni-badge badge-team-cyan">!</span>
+      </a>
+
+      <!-- 7. KHUÔN VIÊN & CƠ SỞ VẬT CHẤT (FACILITIES) -->
+      <a class="nav-icon-btn {% if request.endpoint=='facilities' %}active{% endif %}" href="{{ url_for('facilities') }}" data-tooltip="Khuôn viên & Cơ sở vật chất">
+        <span class="ni-icon">
+          <!-- SVG Modern Stadium Arena 3D -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="arenaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#94a3b8"/>
+                <stop offset="50%" stop-color="#475569"/>
+                <stop offset="100%" stop-color="#1e293b"/>
+              </linearGradient>
+            </defs>
+            <ellipse cx="18" cy="18" rx="14" ry="9" fill="url(#arenaGrad)" stroke="#38bdf8" stroke-width="1.4"/>
+            <ellipse cx="18" cy="18" rx="9" ry="5.5" fill="#15803d" stroke="#86efac" stroke-width="1"/>
+            <path d="M6 18 C6 24 12 28 18 28 C24 28 30 24 30 18" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+            <line x1="18" y1="13" x2="18" y2="23" stroke="#ffffff" stroke-width="1" stroke-dasharray="1 1"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- 8. CÂU LẠC BỘ (CLUB PROFILE & TROPHIES) -->
+      <a class="nav-icon-btn {% if request.endpoint in ['club_profile','club_update_profile'] %}active{% endif %}" href="{{ url_for('club_profile') }}" data-tooltip="Hồ sơ & Thống kê Câu Lạc Bộ">
+        <span class="ni-icon">
+          <!-- SVG Royal Bavarian Club Shield 3D -->
+          <svg viewBox="0 0 36 36" width="30" height="30" fill="none">
+            <defs>
+              <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#0369a1"/>
+              </linearGradient>
+            </defs>
+            <path d="M18 5 L28 9 V18 C28 25 18 30 18 30 C18 30 8 25 8 18 V9 Z" fill="url(#shieldGrad)" stroke="#facc15" stroke-width="1.8"/>
+            <path d="M18 9 L24 12 V18 C24 22 18 26 18 26 C18 26 12 22 12 18 V12 Z" fill="#b91c1c" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="18" cy="17" r="3.5" fill="#facc15"/>
+          </svg>
+        </span>
+      </a>
+
+      <!-- 9. THIẾT LẬP & TÀI KHOẢN (SETTINGS) -->
+      <button class="nav-icon-btn" type="button" onclick="openSettingsModal()" data-tooltip="Thiết lập & Tài khoản" aria-label="Thiết lập">
+        <span class="ni-icon">
+          <!-- SVG Titanium Mechanical Gear 3D -->
+          <svg viewBox="0 0 36 36" width="28" height="28" fill="none">
+            <defs>
+              <linearGradient id="gearGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f8fafc"/>
+                <stop offset="50%" stop-color="#94a3b8"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+            </defs>
+            <path d="M18 13 C15.24 13 13 15.24 13 18 C13 20.76 15.24 23 18 23 C20.76 23 23 20.76 23 18 C23 15.24 20.76 13 18 13 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+            <path d="M30 16.5 H26.8 C26.5 15.3 25.9 14.2 25.1 13.3 L27.4 11 C27.8 10.6 27.8 9.9 27.4 9.5 L26.5 8.6 C26.1 8.2 25.4 8.2 25 8.6 L22.7 10.9 C21.8 10.1 20.7 9.5 19.5 9.2 V6 C19.5 5.4 19.1 5 18.5 5 H17.5 C16.9 5 16.5 5.4 16.5 6 V9.2 C15.3 9.5 14.2 10.1 13.3 10.9 L11 8.6 C10.6 8.2 9.9 8.2 9.5 8.6 L8.6 9.5 C8.2 9.9 8.2 10.6 8.6 11 L10.9 13.3 C10.1 14.2 9.5 15.3 9.2 16.5 H6 C5.4 16.5 5 16.9 5 17.5 V18.5 C5 19.1 5.4 19.5 6 19.5 H9.2 C9.5 20.7 10.1 21.8 10.9 22.7 L8.6 25 C8.2 25.4 8.2 26.1 8.6 26.5 L9.5 27.4 C9.9 27.8 10.6 27.8 11 27.4 L13.3 25.1 C14.2 25.9 15.3 26.5 16.5 26.8 V30 C16.5 30.6 16.9 31 17.5 31 H18.5 C19.1 31 19.5 30.6 19.5 30 V26.8 C20.7 26.5 21.8 25.9 22.7 25.1 L25 27.4 C25.4 27.8 26.1 27.8 26.5 27.4 L27.4 26.5 C27.8 26.1 27.8 25.4 27.4 25 L25.1 22.7 C25.9 21.8 26.5 20.7 26.8 19.5 H30 C30.6 19.5 31 19.1 31 18.5 V17.5 C31 16.9 30.6 16.5 30 16.5 Z" fill="url(#gearGrad)" stroke="#e2e8f0" stroke-width="0.8"/>
+          </svg>
+        </span>
+      </button>
+    </aside>
+
+    <!-- MAIN VIEWPORT CONTAINER -->
+    <div class="main-viewport">
+      <main class="container">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flashwrap">
+              {% for m in messages %}
+                <div class="flash">
+                  <span style="font-size: 20px;">📣</span>
+                  <span>{{ m }}</span>
+                </div>
+              {% endfor %}
             </div>
-          {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
+  </div>
+
+  <!-- MODAL: BÁO CÁO TRỢ LÝ (QUÀ TẶNG HÀNG NGÀY & HỢP ĐỒNG TÀI CHÍNH) -->
+  <div class="te-modal-backdrop" id="assistantModalBackdrop" style="display: none;" onclick="if(event.target===this) closeAssistantModal()">
+    <div class="te-modal assistant-modal" role="dialog" aria-modal="true" aria-labelledby="assistantModalTitle">
+      <div class="te-modal-header">
+        <div class="te-modal-title" id="assistantModalTitle">
+          <span class="te-title-neon">BÁO CÁO TRỢ LÝ</span>
         </div>
-      {% endif %}
-    {% endwith %}
+        <button class="te-modal-close" type="button" onclick="closeAssistantModal()" title="Đóng">✕</button>
+      </div>
 
-    {% block content %}{% endblock %}
-  </main>
+      <div class="te-modal-body">
+        <!-- PHẦN 1: QUÀ TẶNG HÀNG NGÀY -->
+        <div class="assistant-section">
+          <div class="assistant-sec-title">Quà tặng Hàng ngày</div>
+          <div class="daily-gifts-grid">
+            <!-- 1. VÉ TRỊ THƯƠNG -->
+            <div class="gift-card">
+              <div class="gift-icon-box gift-red">
+                <span>➕</span>
+                <span class="gift-badge-corner">🎁</span>
+              </div>
+              <div class="gift-details">
+                <div class="gift-name">Vé Trị Thương</div>
+                <div class="gift-sub">+1 Thẻ Y Tế mỗi 3 ngày</div>
+              </div>
+              <form method="post" action="{{ url_for('claim_daily_gift') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if club.daily_gift_claimed_day == club.season_day %}
+                  <button class="btn-gift-claimed" type="button" disabled>ĐÃ NHẬN</button>
+                {% else %}
+                  <button class="btn-gift-claim" type="submit">NHẬN</button>
+                {% endif %}
+              </form>
+            </div>
 
-  <footer class="footer">
-    BĂNG GHẾ CHỈ ĐẠO • Top Eleven Game Experience Prototype • Quản lý bóng đá chiến thuật đỉnh cao
-  </footer>
+            <!-- 2. TĂNG TINH THẦN -->
+            <div class="gift-card">
+              <div class="gift-icon-box gift-blue">
+                <span>⚡</span>
+                <span class="gift-badge-corner">🎁</span>
+              </div>
+              <div class="gift-details">
+                <div class="gift-name">Tăng tinh thần</div>
+                <div class="gift-sub">+1 Thẻ Tinh Thần</div>
+              </div>
+              <form method="post" action="{{ url_for('claim_daily_gift') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if club.daily_gift_claimed_day == club.season_day %}
+                  <button class="btn-gift-claimed" type="button" disabled>ĐÃ NHẬN</button>
+                {% else %}
+                  <button class="btn-gift-claim" type="submit">NHẬN</button>
+                {% endif %}
+              </form>
+            </div>
+
+            <!-- 3. VÉ NGHỈ NGƠI -->
+            <div class="gift-card">
+              <div class="gift-icon-box gift-green">
+                <span>⏱️</span>
+                <span class="gift-badge-corner">🎁</span>
+              </div>
+              <div class="gift-details">
+                <div class="gift-name">Vé nghỉ ngơi</div>
+                <div class="gift-sub">+1 Thẻ Sức Khỏe</div>
+              </div>
+              <form method="post" action="{{ url_for('claim_daily_gift') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if club.daily_gift_claimed_day == club.season_day %}
+                  <button class="btn-gift-claimed" type="button" disabled>ĐÃ NHẬN</button>
+                {% else %}
+                  <button class="btn-gift-claim" type="submit">NHẬN</button>
+                {% endif %}
+              </form>
+            </div>
+
+
+          </div>
+        </div>
+
+        <!-- PHẦN 2: TÀI CHÍNH (HỢP ĐỒNG TV & NHÀ TÀI TRỢ) -->
+        <div class="assistant-section">
+          <div class="assistant-sec-header">
+            <span class="assistant-sec-title">TÀI CHÍNH</span>
+          </div>
+          <div class="finance-list">
+            <!-- HỢP ĐỒNG BẢN QUYỀN TV -->
+            <div class="finance-item">
+              <div class="finance-icon">🪙</div>
+              <div class="finance-text">
+                {% if club.tv_contract_signed %}
+                  <div class="fin-title">Hợp đồng Bản quyền TV: <b style="color:var(--accent-green);">ĐÃ KÝ KẾT</b></div>
+                  <div class="fin-sub">Đang tự động nhận thêm <b style="color:var(--accent-gold);">+1 Tiền vàng 🪙</b> theo hợp đồng.</div>
+                {% else %}
+                  <div class="fin-title">Hợp đồng Bản quyền TV <b>chưa được ký</b>, hãy ký ngay để có thêm <b>🪙</b>.</div>
+                  <div class="fin-sub">Nhận ngay +2 Tiền Vàng và nhận thêm 1 Token mỗi 3 ngày.</div>
+                {% endif %}
+              </div>
+              {% if not club.tv_contract_signed %}
+                <form method="post" action="{{ url_for('sign_contract', ctype='tv') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn-finance-action" type="submit">KÝ NGAY ›</button>
+                </form>
+              {% else %}
+                <span class="badge good">ĐÃ HOÀN TẤT</span>
+              {% endif %}
+            </div>
+
+            <!-- HỢP ĐỒNG NHÀ TÀI TRỢ JERSEY -->
+            <div class="finance-item">
+              <div class="finance-icon">👕</div>
+              <div class="finance-text">
+                {% if club.sponsor_contract_signed %}
+                  <div class="fin-title">Hợp đồng Nhà tài trợ Jersey: <b style="color:var(--accent-green);">ĐÃ KÝ KẾT</b></div>
+                  <div class="fin-sub">Đang tự động nhận thêm <b style="color:var(--accent-green);">+12.000$ 💵</b> theo hợp đồng.</div>
+                {% else %}
+                  <div class="fin-title">Hợp đồng Nhà tài trợ Jersey <b>chưa được ký</b>, hãy ký ngay để có thêm <b>💵</b>.</div>
+                  <div class="fin-sub">Nhận ngay +100.000$ tiền mặt ngân quỹ CLB.</div>
+                {% endif %}
+              </div>
+              {% if not club.sponsor_contract_signed %}
+                <form method="post" action="{{ url_for('sign_contract', ctype='sponsor') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn-finance-action" type="submit">KÝ NGAY ›</button>
+                </form>
+              {% else %}
+                <span class="badge good">ĐÃ HOÀN TẤT</span>
+              {% endif %}
+            </div>
+
+
+          </div>
+        </div>
+
+        <!-- PHẦN 3: TĂNG CƯỜNG (BÁO CÁO CỐ VẤN) -->
+        <div class="assistant-section">
+          <div class="assistant-sec-header">
+            <span class="assistant-sec-title">TĂNG CƯỜNG</span>
+            <span class="assistant-stat-badge">⚡ 1</span>
+          </div>
+          <div class="boost-report-card">
+            <span class="boost-icon">🏟️</span>
+            <div>
+              <div style="font-weight: 700; color: #fff;">Doanh thu sân nhà phụ thuộc sức chứa và tinh thần đội bóng</div>
+              <div class="muted" style="font-size: 12px; margin-top: 2px;">Khán giả và tiền vé được ghi lại khi trận đấu thực sự kết thúc. Nâng cấp công trình giúp tăng doanh thu sau khi xây xong.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NẠP / ĐỔI TÀI NGUYÊN (QUICK RESOURCE EXCHANGE) -->
+  <div class="te-modal-backdrop" id="resourceModalBackdrop" style="display: none;" onclick="if(event.target===this) closeResourceModal()">
+    <div class="te-modal resource-modal" role="dialog" aria-modal="true" aria-labelledby="resourceModalTitle">
+      <div class="te-modal-header">
+        <div class="te-modal-title" id="resourceModalTitle">
+          <span class="te-title-neon">KHO TÀI NGUYÊN CLB</span>
+        </div>
+        <button class="te-modal-close" type="button" onclick="closeResourceModal()" title="Đóng">✕</button>
+      </div>
+
+      <div class="te-modal-body">
+        <p class="muted" style="margin-bottom: 16px;">Sử dụng Tiền Vàng 🪙 để đổi lấy các gói hỗ trợ sức khỏe, tinh thần và y tế cho đội bóng:</p>
+
+        <div class="exchange-grid">
+          <!-- 1. THẺ SỨC KHỎE -->
+          <div class="exchange-card">
+            <div class="ex-icon">⏱️</div>
+            <div class="ex-info">
+              <div class="ex-name">Gói Thể Lực (2 Thẻ)</div>
+              <div class="ex-cost">Chi phí: 1 🪙 Tiền Vàng</div>
+            </div>
+            <form method="post" action="{{ url_for('resource_exchange') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="type" value="rest">
+              <button class="button primary small" type="submit">Đổi Ngay</button>
+            </form>
+          </div>
+
+          <!-- 2. THẺ TINH THẦN -->
+          <div class="exchange-card">
+            <div class="ex-icon">⚡</div>
+            <div class="ex-info">
+              <div class="ex-name">Gói Tinh Thần (2 Thẻ)</div>
+              <div class="ex-cost">Chi phí: 1 🪙 Tiền Vàng</div>
+            </div>
+            <form method="post" action="{{ url_for('resource_exchange') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="type" value="morale">
+              <button class="button primary small" type="submit">Đổi Ngay</button>
+            </form>
+          </div>
+
+          <!-- 3. THẺ CHẤN THƯƠNG -->
+          <div class="exchange-card">
+            <div class="ex-icon">➕</div>
+            <div class="ex-info">
+              <div class="ex-name">Gói Y Tế Trị Thương (1 Thẻ)</div>
+              <div class="ex-cost">Chi phí: 1 🪙 Tiền Vàng</div>
+            </div>
+            <form method="post" action="{{ url_for('resource_exchange') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="type" value="injury">
+              <button class="button primary small" type="submit">Đổi Ngay</button>
+            </form>
+          </div>
+
+          <!-- 4. TIỀN MẶT -->
+          <div class="exchange-card">
+            <div class="ex-icon">💵</div>
+            <div class="ex-info">
+              <div class="ex-name">Ngân Quỹ CLB (+100K $)</div>
+              <div class="ex-cost">Chi phí: 2 🪙 Tiền Vàng</div>
+            </div>
+            <form method="post" action="{{ url_for('resource_exchange') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="type" value="cash">
+              <button class="button primary small" type="submit">Đổi Ngay</button>
+            </form>
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THIẾT LẬP & TÀI KHOẢN (SETTINGS, ĐỔI MẬT KHẨU, ĐĂNG XUẤT) -->
+  <div class="te-modal-backdrop" id="settingsModalBackdrop" style="display: none;" onclick="if(event.target===this) closeSettingsModal()">
+    <div class="te-modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <div class="te-modal-header">
+        <div class="te-modal-title" id="settingsModalTitle">
+          <span class="te-title-neon">⚙️ THIẾT LẬP & TÀI KHOẢN</span>
+        </div>
+        <button class="te-modal-close" type="button" onclick="closeSettingsModal()" title="Đóng">✕</button>
+      </div>
+
+      <div class="te-modal-body">
+
+        <!-- PHẦN 1: THÔNG TIN TÀI KHOẢN -->
+        <div class="settings-card-box">
+          <div class="settings-card-header">
+            <span class="set-icon">👤</span>
+            <span class="set-title">THÔNG TIN TÀI KHOẢN</span>
+          </div>
+          <div class="settings-info-grid">
+            <div class="set-info-row">
+              <span class="set-label">Tên đăng nhập:</span>
+              <span class="set-value-bold text-accent">{{ current_user.username if current_user else 'Chưa đăng nhập' }}</span>
+            </div>
+            <div class="set-info-row">
+              <span class="set-label">Mã Huấn luyện viên:</span>
+              <span class="set-value-badge">#{{ current_user.id if current_user else '---' }}</span>
+            </div>
+            <div class="set-info-row">
+              <span class="set-label">Đội bóng quản lý:</span>
+              <span class="set-value-bold">{{ club.name if club else 'Đội bóng của bạn' }}</span>
+            </div>
+            <div class="set-info-row">
+              <span class="set-label">Cấp độ Câu Lạc Bộ:</span>
+              <span class="set-value-highlight">Cấp {{ club.club_level }} 🛡️</span>
+            </div>
+            <div class="set-info-row">
+              <span class="set-label">Thời gian tham gia:</span>
+              <span class="set-value muted" id="accountCreatedFormatted">{{ account_created_at }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHẦN 2: ĐỔI MẬT KHẨU -->
+        <div class="settings-card-box">
+          <div class="settings-card-header">
+            <span class="set-icon">🔑</span>
+            <span class="set-title">ĐỔI MẬT KHẨU</span>
+          </div>
+          <form method="post" action="{{ url_for('auth.change_password') }}" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row-group">
+              <label>Mật khẩu hiện tại:</label>
+              <input type="password" name="current_password" class="input-te" placeholder="Nhập mật khẩu đang dùng..." required autocomplete="current-password">
+            </div>
+            <div class="form-row-dual">
+              <div class="form-row-group">
+                <label>Mật khẩu mới (tối thiểu 8 ký tự):</label>
+                <input type="password" name="new_password" class="input-te" minlength="8" maxlength="128" placeholder="Mật khẩu mới..." required autocomplete="new-password">
+              </div>
+              <div class="form-row-group">
+                <label>Nhập lại mật khẩu mới:</label>
+                <input type="password" name="confirm_password" class="input-te" minlength="8" maxlength="128" placeholder="Xác nhận lại mật khẩu..." required autocomplete="new-password">
+              </div>
+            </div>
+            <div style="text-align: right; margin-top: 12px;">
+              <button type="submit" class="button primary small">
+                <span>🔒 Cập Nhật Mật Khẩu</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- PHẦN 3: ĐĂNG XUẤT TÀI KHOẢN -->
+        <div class="settings-card-box logout-box">
+          <div class="logout-action-row">
+            <div>
+              <div class="logout-title">Đăng Xuất Khỏi Thiết Bị</div>
+              <div class="logout-sub muted">Kết thúc phiên đăng nhập hiện tại trên trình duyệt này.</div>
+            </div>
+            <form method="post" action="{{ url_for('auth.logout') }}" style="margin: 0;" onsubmit="return confirm('Bạn có chắc chắn muốn đăng xuất tài khoản này không?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="button danger" type="submit">
+                <span>⏻ ĐĂNG XUẤT</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT FOR MODALS & QUICK ACTIONS -->
+  <script>
+    function openSettingsModal() {
+      const modal = document.getElementById('settingsModalBackdrop');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+        // Format account creation date
+        const tsElem = document.getElementById('accountCreatedFormatted');
+        {% if current_user and current_user.created_at %}
+        try {
+          const d = new Date({{ current_user.created_at }} * 1000);
+          if (tsElem) {
+            tsElem.textContent = d.toLocaleDateString('vi-VN', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+          }
+        } catch(e) {}
+        {% endif %}
+      }
+    }
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModalBackdrop');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+      }
+    }
+
+    function openAssistantModal() {
+      const modal = document.getElementById('assistantModalBackdrop');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+      }
+    }
+    function closeAssistantModal() {
+      const modal = document.getElementById('assistantModalBackdrop');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+      }
+    }
+
+    function openResourceModal(type) {
+      const modal = document.getElementById('resourceModalBackdrop');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+      }
+    }
+    function closeResourceModal() {
+      const modal = document.getElementById('resourceModalBackdrop');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+      }
+    }
+
+    // Keyboard Escape to close modals
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeSettingsModal();
+        closeAssistantModal();
+        closeResourceModal();
+      }
+    });
+  </script>
 </body>
 </html>

@@ -1,96 +1,896 @@
 {% extends "base.html" %}
+
+{% block title %}{{ club.name }} - Trung Tâm Huấn Luyện | Top Eleven Edition{% endblock %}
+
+{% block page_title %}TẬP LUYỆN{% endblock %}
+
 {% block content %}
-  <div class="card card-glow-cyan">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <div class="card-title" style="margin-bottom: 4px;">
-          <span class="icon">🏋️</span>
-          <span>TRUNG TÂM HUẤN LUYỆN TOÀN ĐỘI (TRAINING GROUND)</span>
+<div class="training-hub-wrapper">
+
+  <!-- ========================================================================= -->
+  <!-- 1. MAIN TRAINING HUB STAGE (Ảnh 3)                                       -->
+  <!-- ========================================================================= -->
+  <div class="training-main-stage">
+
+    <p class="muted" style="margin:12px 0 18px">Hồi 10% thể lực mỗi 8 giờ, kể cả khi thoát game. Một ngày mô phỏng = 24 giờ. Dưới 20% không được tập; mỗi thẻ hồi 10% cho một cầu thủ. Mọi cầu thủ đều có thể tập lên 200%. Bài khó tăng nhanh hơn nhưng tốn nhiều thể lực; giới hạn tổng tăng 1,2 điểm kỹ năng/cầu thủ/ngày, giảm dần khi gần 200%.</p>
+  <!-- TOP ROW: TRAINING GAUGE (8/40) & CLUB LEVEL (LVL 110) -->
+    <div class="training-stage-header">
+      <!-- LEFT: TRAINING PROGRESS GAUGE (VÒNG CUNG 8/40) -->
+      <div class="gauge-hub-box" title="Tiến trình tích lũy điểm tập luyện trong ngày (Tối đa 40 điểm)">
+        <div class="gauge-arc-wrap">
+          <svg class="gauge-svg" viewBox="0 0 160 110">
+            <!-- Background Arc Track -->
+            <path d="M 20 100 A 60 60 0 0 1 140 100" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="12" stroke-linecap="round"/>
+            <!-- Active Neon Arc (Color stops) -->
+            {% set pct = (training_pts / 40.0) %}
+            {% set dash = pct * 188 %}
+            <path d="M 20 100 A 60 60 0 0 1 140 100" fill="none" stroke="url(#gaugeGlow)" stroke-width="12" stroke-dasharray="188" stroke-dashoffset="{{ 188 - dash }}" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="gaugeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="60%" stop-color="#00f576"/>
+                <stop offset="100%" stop-color="#ef4444"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-center-val">
+            <span class="gauge-num">{{ training_pts }}</span><span class="gauge-denom">/40</span>
+          </div>
         </div>
-        <p class="muted" style="margin: 0;">
-          Huấn luyện giúp cầu thủ tăng chỉ số OVR. Chú ý giữ thể lực ổn định để tránh nguy cơ dính chấn thương.
-        </p>
+        <div class="gauge-sub-label">Điểm tích lũy hôm nay</div>
       </div>
 
-      <div class="row">
-        <span class="badge good">🟢 Sẵn sàng: <b>{{ healthy }} cầu thủ</b></span>
-        {% if injured > 0 %}
-          <span class="badge bad">🔴 Chấn thương: <b>{{ injured }} cầu thủ</b></span>
+      <!-- RIGHT: LEVEL BADGE & INFO BUTTON -->
+      <div class="stage-header-right">
+        <div class="lvl-badge-circle" title="Cấp độ huấn luyện CLB">
+          <span class="lvl-txt">LVL</span>
+          <span class="lvl-val">{{ club.club_level }}</span>
+        </div>
+        <button type="button" class="btn-training-help" onclick="openTrainingHelpModal()" title="Hướng dẫn huấn luyện Top Eleven">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTER CARDS: 2 GIANT TILES: CẦU THỦ & BÀI TẬP -->
+    <div class="training-center-tiles">
+      <!-- TILE 1: CẦU THỦ (PLAYER SELECTION) -->
+      <div class="tr-tile tr-tile-players" onclick="openPlayerSelectModal()" title="Bấm để chọn danh sách cầu thủ tham gia buổi tập">
+        <div class="tr-tile-icon-box yellow-jersey">
+          <span class="tr-jersey-ico">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="#fbbf24"><path d="M12 2c-1.1 0-2 .9-2 2 0 .55.22 1.05.59 1.41L8.5 7.5 4 6 2 9l3 2v10h14V11l3-2-2-3-4.5 1.5-2.09-2.09C13.78 4.05 14 3.55 14 3c0-1.1-.9-2-2-2z"/></svg>
+          </span>
+        </div>
+        <div class="tr-tile-title">CẦU THỦ</div>
+        <div class="tr-tile-sub" id="hubPlayersCountLabel">
+          <span class="badge-tile-count" id="selectedPlayersCountBadge">{{ healthy_count }}</span> Cầu thủ đã chọn
+        </div>
+      </div>
+
+      <!-- TILE 2: BÀI TẬP (DRILLS SELECTION) -->
+      <div class="tr-tile tr-tile-drills" onclick="openDrillSelectModal()" title="Bấm để chọn tối đa 6 bài tập luyện">
+        <div class="tr-tile-icon-box soccer-goal">
+          <span class="tr-ball-ico">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          </span>
+        </div>
+        <div class="tr-tile-title">BÀI TẬP</div>
+        <div class="tr-tile-sub" id="hubDrillsCountLabel">
+          <span class="badge-tile-count" id="selectedDrillsCountBadge">4</span>/6 Bài tập đã chọn
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN START TRAINING ACTION BUTTON (CÒI 3D LỚN) -->
+    <div class="start-training-action-wrap">
+      <form method="post" action="{{ url_for('do_training') }}" id="mainTrainingForm" onsubmit="return handleMainTrainSubmit(event);">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="drill_ids" id="formDrillIds" value="att_1,att_2,def_1,pos_1">
+        <input type="hidden" name="player_ids" id="formPlayerIds" value="{% for p in players %}{% if p.can_train %}{{ p.id }},{% endif %}{% endfor %}">
+
+        <button type="submit" class="btn-start-training-te" id="btnStartTraining">
+          <div class="btn-whistle-3d">
+            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
+              <path d="M12 8 H26 A6 6 0 0 1 32 14 V20 A6 6 0 0 1 26 26 H18 L10 32 V26 H8 A6 6 0 0 1 2 20 V14 A6 6 0 0 1 8 8 Z" fill="url(#whistleSilver)"/>
+              <circle cx="16" cy="17" r="4" fill="#0284c7"/>
+              <defs>
+                <linearGradient id="whistleSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f8fafc"/>
+                  <stop offset="40%" stop-color="#cbd5e1"/>
+                  <stop offset="100%" stop-color="#64748b"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="btn-start-txt-box">
+            <span class="btn-start-main">BẮT ĐẦU BUỔI TẬP LUYỆN</span>
+            <span class="btn-start-sub">Tạo một buổi tập bằng cách chọn cầu thủ và bài tập luyện!</span>
+          </div>
+        </button>
+      </form>
+    </div>
+
+    <!-- BOTTOM CONTROL BAR (5 NÚT CHỨC NĂNG DƯỚI CÙNG - Ảnh 3) -->
+    <div class="training-bottom-dock">
+      <!-- 1. TT VẬT LÝ TRỊ LIỆU (Xem thể lực toàn đội - Ảnh 2) -->
+      <button type="button" class="dock-action-btn" onclick="openPlayerSelectModal()" title="Trung tâm vật lý trị liệu - Xem thể lực cầu thủ">
+        <div class="dock-btn-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+          </svg>
+        </div>
+        <span class="dock-btn-label">TT VẬT LÝ<br>TRỊ LIỆU</span>
+      </button>
+
+      <!-- 2. TẬP NHANH (HUẤN LUYỆN NHANH POPOVER) -->
+      <div class="quick-train-popover-container">
+        <button type="button" class="dock-action-btn active-pop" id="btnToggleQuickTrain" onclick="toggleQuickTrainPopover()" title="Huấn luyện nhanh tự động">
+          <div class="dock-btn-icon">
+            <svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+          </div>
+          <span class="dock-btn-label">TẬP NHANH</span>
+        </button>
+
+        <!-- POPOVER BOX: HUẤN LUYỆN NHANH (Ảnh 3) -->
+        <div class="quick-train-popover" id="quickTrainPopover">
+          <div class="qtp-header">
+            <span class="qtp-title">Huấn luyện nhanh</span>
+            <button type="button" class="qtp-close" onclick="closeQuickTrainPopover()">✕</button>
+          </div>
+          <p class="qtp-desc">
+            Chọn Huấn luyện nhanh và tôi sẽ sắp xếp phần hợp lý cho các cầu thủ được chọn của chúng ta. Các cầu thủ sẽ vẫn sung sức sau này.
+          </p>
+          <div class="qtp-buttons-grid">
+            <!-- DỄ -->
+            <form method="post" action="{{ url_for('do_training') }}" style="margin: 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quick_mode" value="easy">
+              <button type="submit" class="btn-qtp-level qtp-easy" title="Tập nhẹ nhàng: Tiêu hao khoảng 9% thể lực, mức hao tổn thấp">
+                <span class="qtp-lvl-name">DỄ</span>
+                <div class="qtp-pips-bar">
+                  <span class="pip pip-green"></span>
+                  <span class="pip pip-green"></span>
+                  <span class="pip pip-muted"></span>
+                  <span class="pip pip-muted"></span>
+                </div>
+              </button>
+            </form>
+
+            <!-- VỪA PHẢI -->
+            <form method="post" action="{{ url_for('do_training') }}" style="margin: 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quick_mode" value="medium">
+              <button type="submit" class="btn-qtp-level qtp-medium" title="Tập cân bằng: Tiêu hao khoảng 17% thể lực, tăng tiến đều đặn">
+                <span class="qtp-lvl-name">VỪA PHẢI</span>
+                <div class="qtp-pips-bar">
+                  <span class="pip pip-green"></span>
+                  <span class="pip pip-green"></span>
+                  <span class="pip pip-orange"></span>
+                  <span class="pip pip-muted"></span>
+                </div>
+              </button>
+            </form>
+
+            <!-- KHÓ -->
+            <form method="post" action="{{ url_for('do_training') }}" style="margin: 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quick_mode" value="hard">
+              <button type="submit" class="btn-qtp-level qtp-hard" title="Tập nặng: Tiêu hao khoảng 30% thể lực, đột phá chỉ số">
+                <span class="qtp-lvl-name">KHÓ</span>
+                <div class="qtp-pips-bar">
+                  <span class="pip pip-green"></span>
+                  <span class="pip pip-orange"></span>
+                  <span class="pip pip-red"></span>
+                  <span class="pip pip-red"></span>
+                </div>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. BÁO CÁO (Xem kết quả buổi tập gần nhất) -->
+      <button type="button" class="dock-action-btn" onclick="openTrainingReportModal()" title="Xem báo cáo kết quả buổi tập vừa qua">
+        <div class="dock-btn-icon">
+          <svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="dock-btn-label">BÁO CÁO</span>
+      </button>
+
+      <!-- 4. BẬC CẦU THỦ (Xem chất lượng & cấp sao) -->
+      <button type="button" class="dock-action-btn" onclick="openPlayerTiersModal()" title="Xem chất lượng và bậc sao cầu thủ">
+        <div class="dock-btn-icon">
+          <svg viewBox="0 0 20 20" width="20" height="20" fill="#fbbf24"><path fill-rule="evenodd" d="M10 2l2.5 5 5.5.8-4 3.9.9 5.3-4.9-2.6-4.9 2.6.9-5.3-4-3.9 5.5-.8L10 2z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="dock-btn-label">BẬC<br>CẦU THỦ</span>
+      </button>
+
+      <!-- 5. HỌC VIỆN CẦU THỦ -->
+      <button type="button" class="dock-action-btn" onclick="window.location.href='{{ url_for('youth') }}'" title="Học viện đào tạo tài năng trẻ">
+        <div class="dock-btn-icon">
+          <svg viewBox="0 0 20 20" width="20" height="20" fill="#38bdf8"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a10.973 10.973 0 00-.25 2.449c0 .762.07 1.507.202 2.228L3.293 14.707a1 1 0 001.414 1.414l2.122-2.122A10.938 10.938 0 0010 14.5c1.802 0 3.49-.434 4.97-1.2l2.122 2.122a1 1 0 001.414-1.414l-1.91-1.91a10.973 10.973 0 00.404-3.547c0-.853-.098-1.684-.282-2.48l2.288-1.002a1 1 0 000-1.84l-7-3z"/></svg>
+          <span class="dock-badge-notif">!</span>
+        </div>
+        <span class="dock-btn-label">HỌC VIỆN<br>CẦU THỦ</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MODAL: CHỌN BÀI TẬP LUYỆN (Ảnh 1)                                       -->
+  <!-- ========================================================================= -->
+  <div class="te-modal-backdrop" id="drillSelectModalBackdrop" onclick="if(event.target===this) closeDrillSelectModal()">
+    <div class="drill-selection-dialog" role="dialog" aria-modal="true" aria-labelledby="drillModalTitle">
+
+      <!-- MODAL TOPBAR -->
+      <div class="ds-dialog-header">
+        <div class="ds-header-title" id="drillModalTitle">CHỌN BÀI TẬP LUYỆN</div>
+        <button type="button" class="ds-btn-close" onclick="closeDrillSelectModal()" title="Đóng">✕</button>
+      </div>
+
+      <!-- 5 CATEGORY TABS -->
+      <div class="ds-categories-bar">
+        {% for cat in categories %}
+          <button type="button"
+                  class="ds-cat-tab {% if cat.key == 'attack' %}active{% endif %}"
+                  id="catTab_{{ cat.key }}"
+                  onclick="switchDrillCategory('{{ cat.key }}')">
+            <span class="ds-cat-txt">{{ cat.name }}</span>
+            {% if cat.badge %}<span class="ds-cat-badge">{{ cat.badge }}</span>{% endif %}
+          </button>
+        {% endfor %}
+      </div>
+
+      <!-- DRILLS CARDS CAROUSEL / GRID -->
+      <div class="ds-drills-viewport">
+        {% for cat in categories %}
+          <div class="ds-category-pane {% if cat.key == 'attack' %}active{% endif %}" id="catPane_{{ cat.key }}">
+            <div class="ds-drills-row">
+              {% for d in drills_by_cat[cat.key] %}
+                <div class="drill-card-te" id="drillCard_{{ d.id }}" onclick="toggleDrillSelection('{{ d.id }}')">
+                  <!-- Pitch Grass Mockup Art -->
+                  <div class="drill-card-pitch-art drill-art-{{ d.category }}">
+                    <div class="dc-chalk-lines"></div>
+                    <div class="dc-arrow-cue">➔</div>
+                    <div class="dc-trophy-badge">
+                      {% if d.whistles == 1 %}
+                        <span class="dc-whistle">🪙</span>
+                      {% elif d.whistles == 2 %}
+                        <span class="dc-whistle">🪙🪙</span>
+                      {% else %}
+                        <span class="dc-whistle">🪙🪙🪙</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Drill Card Content -->
+                  <div class="drill-card-body">
+                    <div class="dc-name">{{ d.name }}</div>
+                    <div class="dc-desc">{{ d.desc }}</div>
+                    <div class="dc-diff-badge diff-{{ d.difficulty_key }}">{{ d.difficulty }}</div>
+                  </div>
+
+                  <!-- Selection Overlay Tick -->
+                  <div class="drill-selected-overlay" id="drillOverlay_{{ d.id }}">
+                    <span class="dso-check">✔</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- 6 DRILL SLOTS (THẢ VÀO ĐÂY) -->
+      <div class="ds-slots-section">
+        <div class="ds-slots-grid">
+          {% for slot_i in range(6) %}
+            <div class="drill-slot-box" id="drillSlot_{{ slot_i }}" onclick="removeDrillFromSlot({{ slot_i }})">
+              <div class="slot-empty-content">
+                <span class="slot-empty-title">THẢ<br>VÀO ĐÂY</span>
+              </div>
+              <div class="slot-filled-content" style="display: none;">
+                <span class="slot-fill-icon">⚽</span>
+                <span class="slot-fill-name">Bài tập</span>
+                <span class="slot-btn-remove" title="Bỏ bài tập này">✕</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- DIALOG FOOTER BAR (Ảnh 1) -->
+      <div class="ds-dialog-footer">
+        <!-- Nút Chuyển nhanh sang Chọn Cầu Thủ -->
+        <button type="button" class="btn-ds-switch-players" onclick="closeDrillSelectModal(); openPlayerSelectModal();">
+          <span class="btn-dsp-shirt">👕</span>
+          <span class="btn-dsp-txt">CHỌN CẦU THỦ</span>
+        </button>
+
+        <!-- Số cầu thủ đã chọn -->
+        <div class="ds-footer-players-stat">
+          <span class="ds-shirt-mini">👕</span>
+          <span class="ds-stat-x">×</span>
+          <span class="ds-stat-num" id="modalPlayersCountTxt">{{ healthy_count }}</span>
+        </div>
+
+        <!-- 4 Thanh tăng cường chỉ số nhóm -->
+        <div class="ds-stat-bars-cluster">
+          <div class="cluster-col">
+            <span class="cluster-label">Tấn công</span>
+            <div class="cluster-pips"><span class="cpip cpip-red"></span><span class="cpip cpip-red"></span></div>
+          </div>
+          <div class="cluster-col">
+            <span class="cluster-label">Phòng ngự</span>
+            <div class="cluster-pips"><span class="cpip cpip-green"></span><span class="cpip cpip-green"></span></div>
+          </div>
+          <div class="cluster-col">
+            <span class="cluster-label">Kiểm soát</span>
+            <div class="cluster-pips"><span class="cpip cpip-yellow"></span><span class="cpip cpip-yellow"></span></div>
+          </div>
+          <div class="cluster-col">
+            <span class="cluster-label">Thể lực</span>
+            <div class="cluster-pips"><span class="cpip cpip-purple"></span><span class="cpip cpip-purple"></span></div>
+          </div>
+        </div>
+
+        <!-- Mức tiêu hao thể lực -->
+        <div class="ds-fatigue-total-box">
+          <div class="ds-fatigue-val" id="dsFatigueValTxt">—</div>
+          <div class="ds-fatigue-sub">Thể lực <span class="info-bubble" title="Thể lực tiêu hao dự kiến cho mỗi cầu thủ">ℹ</span></div>
+        </div>
+
+        <!-- Nút Xác Nhận Bài Tập -->
+        <button type="button" class="btn-ds-confirm" onclick="confirmDrillSelection()">
+          XÁC NHẬN
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 3. MODAL: CHỌN CẦU THỦ & TÌNH TRẠNG THỂ LỰC (Ảnh 2)                        -->
+  <!-- ========================================================================= -->
+  <div class="te-modal-backdrop" id="playerSelectModalBackdrop" onclick="if(event.target===this) closePlayerSelectModal()">
+    <div class="player-selection-dialog" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle">
+
+      <!-- TOPBAR WITH BACK BUTTON (<<) -->
+      <div class="ps-dialog-header">
+        <button type="button" class="ps-btn-back" onclick="closePlayerSelectModal()" title="Quay lại màn hình tập luyện">
+          ‹‹ QUAY LẠI
+        </button>
+        <div class="ps-header-title" id="playerModalTitle">CHỌN CẦU THỦ THAM GIA BUỔI TẬP</div>
+        <div class="ps-quick-filters">
+          <button type="button" class="btn-ps-filter" onclick="selectAllPlayers(true)">Chọn tất cả</button>
+          <button type="button" class="btn-ps-filter" onclick="selectStartersOnly()">11 Đá chính</button>
+          <button type="button" class="btn-ps-filter" onclick="selectAllPlayers(false)">Bỏ chọn hết</button>
+        </div>
+      </div>
+
+      <!-- SQUAD PLAYERS TABLE (Ảnh 2) -->
+      <div class="ps-table-scroll">
+        <table class="ps-squad-table">
+          <thead>
+            <tr>
+              <th style="width: 55px;">VT</th>
+              <th style="width: 45px;">N/A</th>
+              <th>TÊN</th>
+              <th style="width: 75px;">VỊ TRÍ</th>
+              <th style="width: 120px;">CHẤT</th>
+              <th style="width: 160px;">Y/C (THỂ LỰC)</th>
+              <th style="width: 90px; text-align: center;">TẬP LUYỆN</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in players %}
+              <tr class="ps-player-row {% if p.is_injured %}row-injured{% endif %}" id="playerRow_{{ p.id }}">
+                <!-- VT: Assigned slot or Bench -->
+                <td class="col-vt">
+                  {% if p.is_starter %}
+                    <span class="vt-badge starter">{{ p.assigned_pos }}</span>
+                  {% elif p.bench_slot > 0 %}
+                    <span class="vt-badge bench">Dự bị</span>
+                  {% else %}
+                    <span class="vt-badge res">K.ĐK</span>
+                  {% endif %}
+                </td>
+
+                <!-- N/A: Shirt Number -->
+                <td class="col-num">{{ p.shirt_number }}</td>
+
+                <!-- TÊN -->
+                <td class="col-name">
+                  <div class="p-name-cell">
+                    <span class="p-full-name">{{ p.name }}</span>
+                    {% if p.is_injured %}
+                      <span class="badge-inj-tag" title="Chấn thương còn {{ p.injured_days_left }} ngày">🚑 Nghỉ {{ p.injured_days_left }} ngày</span>
+                    {% endif %}
+                  </div>
+                </td>
+
+                <!-- VỊ TRÍ SỞ TRƯỜNG -->
+                <td class="col-pos">
+                  <span class="pos-badge pos-{{ p.position|lower }}">{{ p.position }}</span>
+                </td>
+
+                <!-- CHẤT LƯỢNG (CLTT + SAO) -->
+                <td class="col-cltt">
+                  <div class="cltt-star-wrap">
+                    <span class="cltt-num">{{ p.cltt }}</span>
+                    <span class="cltt-stars">{{ p.stars }}</span>
+                  </div>
+                </td>
+
+                <!-- Y/C: CONDITION BAR + PERCENT -->
+                <td class="col-cond">
+                  <div class="cond-bar-wrap">
+                    <div class="cond-bar-track">
+                      <div class="cond-bar-fill {% if p.condition < 50 %}cond-low{% elif p.condition < 75 %}cond-mid{% endif %}"
+                           style="width: {{ p.condition }}%;"></div>
+                    </div>
+                    <span class="cond-val-txt">{{ p.condition }}%</span>
+                  </div>
+                </td>
+
+                <!-- HÀNH ĐỘNG: CHỌN / HỒI PHỤC -->
+                <td class="col-action" style="text-align: center;">
+                  {% if p.is_injured %}
+                    <form method="post" action="{{ url_for('training_cure_injury', pid=p.id) }}" style="margin: 0; display: inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn-cure-mini" title="1 thẻ y tế cho mỗi tối đa 3 ngày chấn thương">➕ Trị thương</button>
+                    </form>
+                  {% else %}
+                    <button type="button"
+                            class="btn-player-pick active"
+                            id="btnPickPlayer_{{ p.id }}"
+                            onclick="togglePlayerPick({{ p.id }})"
+                            title="Chọn/Bỏ chọn cầu thủ tham gia buổi tập">
+                      <span class="pick-icon">✔</span>
+                    </button>
+                    {% if p.condition < 80 %}
+                      <form method="post" action="{{ url_for('training_heal') }}" style="margin: 0; display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="player_id" value="{{ p.id }}">
+                        <button type="submit" class="btn-heal-quick" title="Hồi phục +10% thể lực (Tốn 1 Thẻ Sức Khỏe ⏱️)">⏱️</button>
+                      </form>
+                    {% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 2 BOTTOM INFO BOXES (Ảnh 2) -->
+      <div class="ps-bottom-summary-grid">
+        <!-- HỘP 1: NGHỈ HỒI SỨC -->
+        <div class="ps-summary-card rest-recovery-card">
+          <div class="rrc-left">
+            <div class="rrc-avatar-box">
+              <span class="rrc-icon">🧘‍♂️</span>
+            </div>
+            <div class="rrc-info">
+              <div class="rrc-headline">NGHỈ HỒI SỨC</div>
+              <div class="rrc-timer-row">
+                <span class="rrc-tag">+10% thể lực trong:</span>
+                <div class="rrc-mini-bar"><div class="rrc-mini-fill" style="width: 72%;"></div></div>
+                <span class="rrc-time-txt" id="recoveryTimer">{{ recovery_seconds // 3600 }}:{{ "%02d"|format((recovery_seconds % 3600) // 60) }}:{{ "%02d"|format(recovery_seconds % 60) }}</span>
+              </div>
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('training_heal') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="heal_all" value="1">
+            <button type="submit" class="btn-rrc-heal-all" title="Mỗi cầu thủ cần 1 thẻ để hồi 10% thể lực">
+              ⚡ HỒI PHỤC CẢ ĐỘI
+            </button>
+          </form>
+        </div>
+
+        <!-- HỘP 2: THỂ LỰC CHUNG CỦA ĐỘI -->
+        <div class="ps-summary-card team-condition-card">
+          <div class="tcc-header">
+            <span class="tcc-title">Thể lực chung của đội: <b>{{ avg_team_cond }}%</b></span>
+          </div>
+          <div class="tcc-bar-wrap">
+            <div class="tcc-bar-fill" style="width: {{ avg_team_cond }}%;"></div>
+          </div>
+          <div class="tcc-footer-labels">
+            <span class="tcc-lbl-left">Massage trị liệu</span>
+            <span class="tcc-lbl-right">NGHỈ ĐẦY ĐỦ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODAL: BÁO CÁO KẾT QUẢ BUỔI TẬP                                        -->
+  <!-- ========================================================================= -->
+  <div class="te-modal-backdrop" id="trainingReportModalBackdrop" onclick="if(event.target===this) closeTrainingReportModal()">
+    <div class="te-modal" role="dialog" aria-modal="true">
+      <div class="te-modal-header">
+        <div class="te-modal-title">
+          <span class="te-title-neon">BÁO CÁO HUẤN LUYỆN</span>
+        </div>
+        <button class="te-modal-close" type="button" onclick="closeTrainingReportModal()">✕</button>
+      </div>
+      <div class="te-modal-body">
+        {% if last_report %}
+          <div class="report-success-box">
+            <div class="rsb-icon">🏆</div>
+            <div class="rsb-title">Buổi tập vừa hoàn thành xuất sắc!</div>
+            <div class="rsb-grid">
+              <div class="rsb-item">
+                <span class="rsb-label">Cầu thủ tham gia:</span>
+                <span class="rsb-val">{{ last_report.trained_count }} cầu thủ</span>
+              </div>
+              <div class="rsb-item">
+                <span class="rsb-label">Số bài tập:</span>
+                <span class="rsb-val">{{ last_report.drills_count }} bài tập</span>
+              </div>
+              <div class="rsb-item">
+                <span class="rsb-label">Hao tổn thể lực:</span>
+                <span class="rsb-val" style="color: #f59e0b;">-{{ last_report.total_fatigue }}%</span>
+              </div>
+              <div class="rsb-item">
+                <span class="rsb-label">Chấn thương mới:</span>
+                <span class="rsb-val" style="color: {% if last_report.injuries_count > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                  {{ last_report.injuries_count }} ca (An toàn)
+                </span>
+              </div>
+            </div>
+            <div class="rsb-drills-list">
+              <span class="rsb-drills-title">Các bài tập đã thực hiện:</span>
+              <div class="rsb-tags-wrap">
+                {% for dname in last_report.drills_names %}
+                  <span class="rsb-drill-tag">⚽ {{ dname }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <p class="muted" style="text-align: center; padding: 24px 0;">
+            Chưa có buổi tập nào diễn ra gần đây. Hãy chọn bài tập và bấm <b>Bắt đầu buổi tập luyện</b> để xem báo cáo chi tiết!
+          </p>
         {% endif %}
       </div>
     </div>
   </div>
 
-  <div class="grid">
-    <!-- LEFT: DRILL CONFIGURATION FORM -->
-    <div class="col-7">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span class="icon">⚽</span>
-            <span>BÀI TẬP & CƯỜNG ĐỘ HUẤN LUYỆN</span>
-          </div>
-          <span class="badge cyan">⚡ Tốc độ tập: x{{ "%.2f"|format(effects.train_gain_mult) }}</span>
+
+  <!-- ========================================================================= -->
+  <!-- 5. MODAL: CHẤT LƯỢNG & BẬC CẦU THỦ                                        -->
+  <!-- ========================================================================= -->
+  <div class="te-modal-backdrop" id="playerTiersModalBackdrop" onclick="if(event.target===this) closePlayerTiersModal()">
+    <div class="te-modal" role="dialog" aria-modal="true" style="max-width: 680px;">
+      <div class="te-modal-header">
+        <div class="te-modal-title">
+          <span class="te-title-neon">CHẤT LƯỢNG & BẬC CẦU THỦ</span>
         </div>
-
-        <form method="post">
-          <div class="formgrid">
-            <!-- Drill Focus -->
-            <div class="fcol-6">
-              <label>🎯 Nhóm bài tập chuyên sâu</label>
-              <select name="focus" style="font-size: 15px; font-weight: 700;">
-                <option value="attack">⚽ Tấn công (Dứt điểm & Tốc độ)</option>
-                <option value="defense">🛡️ Phòng ngự (Tắc bóng & Kèm người)</option>
-                <option value="fitness">🔋 Thể lực & Sức bền (Stamina & Condition)</option>
-                <option value="tactics">📐 Chiến thuật & Chuyền bóng (Passing)</option>
-              </select>
-            </div>
-
-            <!-- Intensity -->
-            <div class="fcol-6">
-              <label>⚡ Cường độ buổi tập</label>
-              <select name="intensity" style="font-size: 15px; font-weight: 700;">
-                <option value="light">🟢 Nhẹ (Hao ít thể lực, an toàn)</option>
-                <option value="normal" selected>🟡 Vừa (Cân bằng tăng tiến)</option>
-                <option value="hard">🔴 Nặng (Tăng chỉ số nhanh, rủi ro cao)</option>
-              </select>
-            </div>
-
-            <div class="fcol-12" style="margin-top: 10px;">
-              <button class="button success pulse" type="submit" style="width: 100%; padding: 12px; font-size: 16px;">
-                🏋️ BẮT ĐẦU BUỔI TẬP NGAY
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <div class="row" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle); gap: 10px;">
-          <span class="badge good">🛡️ Giảm chấn thương nhờ Sân tập: <b>x{{ "%.2f"|format(effects.train_injury_mult) }}</b></span>
-          <a class="badge cyan" href="{{ url_for('facilities') }}">Nâng cấp Sân tập →</a>
-        </div>
+        <button class="te-modal-close" type="button" onclick="closePlayerTiersModal()">✕</button>
       </div>
-    </div>
-
-    <!-- RIGHT: MEDICAL & TRAINING ADVICE -->
-    <div class="col-5">
-      <div class="card" style="background: linear-gradient(135deg, rgba(23, 37, 84, 0.6), rgba(15, 23, 42, 0.9)); border-color: rgba(0, 240, 255, 0.3);">
-        <div class="card-title" style="color: var(--accent-cyan); font-size: 18px; margin-bottom: 12px;">
-          <span class="icon">💡</span>
-          <span>BÍ QUYẾT HUẤN LUYỆN TOP ELEVEN</span>
-        </div>
-
-        <ul style="color: var(--text-muted); line-height: 1.7; padding-left: 18px; font-size: 13.5px;">
-          <li><b>Thể lực (Condition) dưới 60%:</b> Tuyệt đối không cho tập nặng vì tỉ lệ đứt dây chằng rất cao!</li>
-          <li><b>Nâng cấp Sân tập:</b> Vừa gia tăng tốc độ thăng tiến OVR, vừa giảm nguy cơ chấn thương.</li>
-          <li><b>Nâng cấp Trung tâm Y tế:</b> Rút ngắn số ngày dưỡng thương của cầu thủ chủ chốt.</li>
-        </ul>
-
-        <div style="margin-top: 16px;">
-          <a class="button secondary" href="{{ url_for('facilities') }}" style="width: 100%;">
-            🏟️ Đến Trung Tâm Cơ Sở Vật Chất
-          </a>
+      <div class="te-modal-body">
+        <p class="muted" style="margin-bottom: 14px;">Bảng phân hạng chất lượng cầu thủ trong đội theo hệ thống đánh giá Top Eleven:</p>
+        <div class="tiers-list-grid">
+          {% for p in players|sort(attribute='cltt', reverse=true) %}
+            <div class="tier-player-item">
+              <span class="tpi-pos pos-{{ p.position|lower }}">{{ p.position }}</span>
+              <span class="tpi-num">#{{ p.shirt_number }}</span>
+              <span class="tpi-name">{{ p.name }}</span>
+              <span class="tpi-stars">{{ p.stars }}</span>
+              <span class="tpi-cltt"><b>{{ p.cltt }}</b>%</span>
+            </div>
+          {% endfor %}
         </div>
       </div>
     </div>
   </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 6. MODAL: HƯỚNG DẪN TẬP LUYỆN                                              -->
+  <!-- ========================================================================= -->
+  <div class="te-modal-backdrop" id="trainingHelpModalBackdrop" onclick="if(event.target===this) closeTrainingHelpModal()">
+    <div class="te-modal" role="dialog" aria-modal="true">
+      <div class="te-modal-header">
+        <div class="te-modal-title">
+          <span class="te-title-neon">CẨM NANG HUẤN LUYỆN TOP ELEVEN</span>
+        </div>
+        <button class="te-modal-close" type="button" onclick="closeTrainingHelpModal()">✕</button>
+      </div>
+      <div class="te-modal-body">
+        <ul style="line-height: 1.8; color: #cbd5e1; padding-left: 20px;">
+          <li><b>Số bài tập:</b> Mỗi buổi tập có thể chọn tối đa <b>6 bài tập</b> để tối ưu hóa sự phát triển kỹ năng.</li>
+          <li><b>Huấn luyện nhanh:</b> Bấm nút <b>TẬP NHANH</b> ở đáy màn hình để hệ thống tự động sắp xếp 3 mức độ: Dễ, Vừa phải, Khó.</li>
+          <li><b>An toàn chấn thương:</b> Cầu thủ có thể lực trên <b>70%</b> hoàn toàn không gặp chấn thương khi tập luyện!</li>
+          <li><b>Hồi phục thể lực:</b> Thể lực hồi phục tự nhiên +10% mỗi 8 giờ, hoặc dùng <b>Thẻ Sức Khỏe ⏱️</b> để hồi phục nhanh tức thì.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- JAVASCRIPT LOGIC CHO MÀN HÌNH TẬP LUYỆN -->
+<script>
+  // State
+  let recoveryRemaining = {{ recovery_seconds }};
+  const recoveryTimer = document.getElementById('recoveryTimer');
+  setInterval(() => {
+    if (!recoveryTimer || recoveryRemaining <= 0) return;
+    recoveryRemaining -= 1;
+    const h = Math.floor(recoveryRemaining / 3600);
+    const m = String(Math.floor((recoveryRemaining % 3600) / 60)).padStart(2, '0');
+    const sec = String(recoveryRemaining % 60).padStart(2, '0');
+    recoveryTimer.textContent = recoveryRemaining ? `${h}:${m}:${sec}` : 'Tải lại để cập nhật';
+  }, 1000);
+  const ALL_PLAYERS = {{ players|tojson }};
+  const DRILLS_MAP = {{ drills_catalog|tojson }};
+
+  let selectedPlayerIds = new Set();
+  // Default: select all healthy players
+  ALL_PLAYERS.forEach(p => {
+    if (p.can_train) selectedPlayerIds.add(p.id);
+  });
+
+  // Default selected drills (4 initial drills)
+  let selectedDrillIds = ["att_1", "att_2", "def_1", "pos_1"];
+
+  // Initialize slots
+  document.addEventListener("DOMContentLoaded", function() {
+    updateDrillSlotsUI();
+    updatePlayersCountUI();
+  });
+
+  // Modal controls
+  function openDrillSelectModal() {
+    document.getElementById("drillSelectModalBackdrop").classList.add("open");
+    updateDrillModalStats();
+  }
+  function closeDrillSelectModal() {
+    document.getElementById("drillSelectModalBackdrop").classList.remove("open");
+  }
+
+  function openPlayerSelectModal() {
+    document.getElementById("playerSelectModalBackdrop").classList.add("open");
+  }
+  function closePlayerSelectModal() {
+    document.getElementById("playerSelectModalBackdrop").classList.remove("open");
+  }
+
+  function openTrainingReportModal() {
+    document.getElementById("trainingReportModalBackdrop").classList.add("open");
+  }
+  function closeTrainingReportModal() {
+    document.getElementById("trainingReportModalBackdrop").classList.remove("open");
+  }
+
+  function openPlayerTiersModal() {
+    document.getElementById("playerTiersModalBackdrop").classList.add("open");
+  }
+  function closePlayerTiersModal() {
+    document.getElementById("playerTiersModalBackdrop").classList.remove("open");
+  }
+
+  function openTrainingHelpModal() {
+    document.getElementById("trainingHelpModalBackdrop").classList.add("open");
+  }
+  function closeTrainingHelpModal() {
+    document.getElementById("trainingHelpModalBackdrop").classList.remove("open");
+  }
+
+  // Quick train popover
+  function toggleQuickTrainPopover() {
+    const pop = document.getElementById("quickTrainPopover");
+    pop.classList.toggle("open");
+  }
+  function closeQuickTrainPopover() {
+    const pop = document.getElementById("quickTrainPopover");
+    if (pop) pop.classList.remove("open");
+  }
+
+  // Drill Category Tabs Switcher
+  function switchDrillCategory(catKey) {
+    document.querySelectorAll(".ds-cat-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".ds-category-pane").forEach(p => p.classList.remove("active"));
+
+    const tab = document.getElementById("catTab_" + catKey);
+    const pane = document.getElementById("catPane_" + catKey);
+    if (tab) tab.classList.add("active");
+    if (pane) pane.classList.add("active");
+  }
+
+  // Toggle drill selection
+  function toggleDrillSelection(drillId) {
+    const idx = selectedDrillIds.indexOf(drillId);
+    if (idx >= 0) {
+      selectedDrillIds.splice(idx, 1);
+    } else {
+      if (selectedDrillIds.length >= 6) {
+        alert("Bạn đã chọn đủ 6 bài tập luyện tối đa cho một buổi tập!");
+        return;
+      }
+      selectedDrillIds.push(drillId);
+    }
+    updateDrillSlotsUI();
+    updateDrillModalStats();
+  }
+
+  function removeDrillFromSlot(slotIndex) {
+    if (slotIndex < selectedDrillIds.length) {
+      selectedDrillIds.splice(slotIndex, 1);
+      updateDrillSlotsUI();
+      updateDrillModalStats();
+    }
+  }
+
+  // Update Drill Slots in UI
+  function updateDrillSlotsUI() {
+    // 1. Update cards tick overlay
+    document.querySelectorAll(".drill-card-te").forEach(card => card.classList.remove("selected"));
+    selectedDrillIds.forEach(did => {
+      const card = document.getElementById("drillCard_" + did);
+      if (card) card.classList.add("selected");
+    });
+
+    // 2. Update 6 slots
+    for (let i = 0; i < 6; i++) {
+      const slotBox = document.getElementById("drillSlot_" + i);
+      if (!slotBox) continue;
+      const emptyBox = slotBox.querySelector(".slot-empty-content");
+      const fillBox = slotBox.querySelector(".slot-filled-content");
+
+      if (i < selectedDrillIds.length) {
+        const did = selectedDrillIds[i];
+        const dobj = DRILLS_MAP[did] || { name: did, icon: "⚽" };
+        slotBox.classList.add("filled");
+        if (emptyBox) emptyBox.style.display = "none";
+        if (fillBox) {
+          fillBox.style.display = "flex";
+          fillBox.querySelector(".slot-fill-icon").innerText = dobj.icon || "⚽";
+          fillBox.querySelector(".slot-fill-name").innerText = dobj.name;
+        }
+      } else {
+        slotBox.classList.remove("filled");
+        if (emptyBox) emptyBox.style.display = "flex";
+        if (fillBox) fillBox.style.display = "none";
+      }
+    }
+
+    // 3. Update hub badge
+    const badge = document.getElementById("selectedDrillsCountBadge");
+    if (badge) badge.innerText = selectedDrillIds.length;
+
+    // 4. Update hidden input for form
+    const inp = document.getElementById("formDrillIds");
+    if (inp) inp.value = selectedDrillIds.join(",");
+  }
+
+  function updateDrillModalStats() {
+    let totalFatigue = 0.0;
+    selectedDrillIds.forEach(did => {
+      if (DRILLS_MAP[did]) {
+        totalFatigue += DRILLS_MAP[did].fatigue;
+      }
+    });
+    totalFatigue = Math.max(3, Math.round(totalFatigue * 2 * 100) / 100);
+
+    const ftxt = document.getElementById("dsFatigueValTxt");
+    if (ftxt) ftxt.innerText = "-" + totalFatigue + "%";
+
+    const ptxt = document.getElementById("modalPlayersCountTxt");
+    if (ptxt) ptxt.innerText = selectedPlayerIds.size;
+  }
+
+  function confirmDrillSelection() {
+    if (selectedDrillIds.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 bài tập!");
+      return;
+    }
+    closeDrillSelectModal();
+  }
+
+  // Player selection logic
+  function togglePlayerPick(pid) {
+    const btn = document.getElementById("btnPickPlayer_" + pid);
+    const row = document.getElementById("playerRow_" + pid);
+
+    if (selectedPlayerIds.has(pid)) {
+      selectedPlayerIds.delete(pid);
+      if (btn) {
+        btn.classList.remove("active");
+        btn.querySelector(".pick-icon").innerText = "+";
+      }
+      if (row) row.classList.remove("selected-p");
+    } else {
+      selectedPlayerIds.add(pid);
+      if (btn) {
+        btn.classList.add("active");
+        btn.querySelector(".pick-icon").innerText = "✔";
+      }
+      if (row) row.classList.add("selected-p");
+    }
+    updatePlayersCountUI();
+  }
+
+  function selectAllPlayers(select) {
+    ALL_PLAYERS.forEach(p => {
+      if (!p.can_train) return;
+      const btn = document.getElementById("btnPickPlayer_" + p.id);
+      const row = document.getElementById("playerRow_" + p.id);
+      if (select) {
+        selectedPlayerIds.add(p.id);
+        if (btn) { btn.classList.add("active"); btn.querySelector(".pick-icon").innerText = "✔"; }
+        if (row) row.classList.add("selected-p");
+      } else {
+        selectedPlayerIds.delete(p.id);
+        if (btn) { btn.classList.remove("active"); btn.querySelector(".pick-icon").innerText = "+"; }
+        if (row) row.classList.remove("selected-p");
+      }
+    });
+    updatePlayersCountUI();
+  }
+
+  function selectStartersOnly() {
+    ALL_PLAYERS.forEach(p => {
+      if (!p.can_train) return;
+      const btn = document.getElementById("btnPickPlayer_" + p.id);
+      const row = document.getElementById("playerRow_" + p.id);
+      if (p.is_starter) {
+        selectedPlayerIds.add(p.id);
+        if (btn) { btn.classList.add("active"); btn.querySelector(".pick-icon").innerText = "✔"; }
+        if (row) row.classList.add("selected-p");
+      } else {
+        selectedPlayerIds.delete(p.id);
+        if (btn) { btn.classList.remove("active"); btn.querySelector(".pick-icon").innerText = "+"; }
+        if (row) row.classList.remove("selected-p");
+      }
+    });
+    updatePlayersCountUI();
+  }
+
+  function updatePlayersCountUI() {
+    const badge = document.getElementById("selectedPlayersCountBadge");
+    if (badge) badge.innerText = selectedPlayerIds.size;
+
+    const modalTxt = document.getElementById("modalPlayersCountTxt");
+    if (modalTxt) modalTxt.innerText = selectedPlayerIds.size;
+
+    const formInp = document.getElementById("formPlayerIds");
+    if (formInp) formInp.value = Array.from(selectedPlayerIds).join(",");
+  }
+
+  function handleMainTrainSubmit(e) {
+    if (selectedDrillIds.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 bài tập luyện!");
+      openDrillSelectModal();
+      return false;
+    }
+    if (selectedPlayerIds.size === 0) {
+      alert("Vui lòng chọn ít nhất 1 cầu thủ tham gia buổi tập!");
+      openPlayerSelectModal();
+      return false;
+    }
+    return true;
+  }
+
+  // Keyboard Escape
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      closeDrillSelectModal();
+      closePlayerSelectModal();
+      closeQuickTrainPopover();
+      closeTrainingReportModal();
+      closePlayerTiersModal();
+      closeTrainingHelpModal();
+    }
+  });
+</script>
 {% endblock %}

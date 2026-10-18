@@ -1,87 +1,342 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- FACILITIES OVERVIEW BANNER -->
-  <div class="card card-glow-cyan" style="padding: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-      <div>
-        <div class="card-title" style="margin-bottom: 4px;">
-          <span class="icon">🏟️</span>
-          <span>CƠ SỞ VẬT CHẤT & SÂN VẬN ĐỘNG (STADIUM COMPLEX)</span>
+  <!-- =====================================================================
+       KHUÔN VIÊN & CƠ SỞ VẬT CHẤT (STADIUM & CAMPUS GROUNDS - SCREENSHOT 3)
+       ===================================================================== -->
+  <div class="campus-container">
+
+    <!-- TOP CAMPUS HUD (SCREENSHOT 3) -->
+    <div class="campus-header-hud">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <h1 class="campus-title-neon">KHUÔN VIÊN</h1>
+        <div class="campus-chapter-pill">
+          <span>CHƯƠNG {{ chapter or 1 }}</span>
+          <span class="info-circle" title="Tiến trình phát triển tổ hợp sân vận động & cơ sở vật chất">
+            <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+          </span>
         </div>
-        <p class="muted" style="margin: 0;">
-          Nâng cấp công trình giúp tăng sức chứa sân, đẩy nhanh tiến độ huấn luyện và bảo vệ cầu thủ khỏi chấn thương.
-        </p>
+        <div class="campus-yield-pill" title="Hiệu suất vận hành & thu nhập theo giờ">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="#38bdf8"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          <span>{{ hourly_rate }}/h</span>
+        </div>
       </div>
 
-      <div class="row">
-        <span class="badge cyan">🏟️ Sức chứa: <b>{{ effects.capacity }} chỗ</b></span>
-        <span class="badge good">⚡ Tập luyện: <b>x{{ "%.2f"|format(effects.train_gain_mult) }}</b></span>
-        <span class="badge warn">💊 Hồi phục y tế: <b>x{{ "%.2f"|format(effects.injury_days_mult) }}</b></span>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- View Toggle -->
+        <div class="campus-view-toggle">
+          <button class="cvt-btn active" id="btnView3D" type="button" onclick="switchCampusView('3d')">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path d="M12 2a8 8 0 100 16 8 8 0 000-16zM4 10a6 6 0 1112 0 6 6 0 01-12 0z"/></svg>
+            Bản đồ 3D
+          </button>
+          <button class="cvt-btn" id="btnViewList" type="button" onclick="switchCampusView('list')">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+            Danh sách
+          </button>
+        </div>
+
+        <!-- Quick Wrench Button (Screenshot 3) -->
+        <button class="campus-wrench-btn" type="button" onclick="openQuickUpgradeModal()" title="Bảo trì & Nâng cấp nhanh công trình">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+        </button>
       </div>
+    </div>
+
+    <!-- 3D ISOMETRIC CAMPUS GROUNDS (REPLACES BLACK SCREEN WITH MODERN CAMPUS) -->
+    <div class="campus-map-viewport" id="campus3DView">
+
+      <!-- STADIUM & GROUNDS SVG ARTWORK -->
+      <svg class="campus-svg-canvas" viewBox="0 0 1200 680" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <!-- Grass gradients -->
+          <linearGradient id="grassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0f2e1b"/>
+            <stop offset="50%" stop-color="#091d11"/>
+            <stop offset="100%" stop-color="#05120a"/>
+          </linearGradient>
+          <radialGradient id="stadiumGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(56, 189, 248, 0.35)"/>
+            <stop offset="60%" stop-color="rgba(16, 185, 129, 0.15)"/>
+            <stop offset="100%" stop-color="rgba(0, 0, 0, 0)"/>
+          </radialGradient>
+          <linearGradient id="roadGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1e293b"/>
+            <stop offset="50%" stop-color="#334155"/>
+            <stop offset="100%" stop-color="#1e293b"/>
+          </linearGradient>
+          <pattern id="turfPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <rect width="40" height="20" fill="rgba(255,255,255,0.015)"/>
+            <rect y="20" width="40" height="20" fill="rgba(0,0,0,0.02)"/>
+          </pattern>
+        </defs>
+
+        <!-- Base ground -->
+        <rect width="100%" height="100%" fill="url(#grassGrad)"/>
+        <rect width="100%" height="100%" fill="url(#turfPattern)"/>
+
+        <!-- Ambient Stadium Floodlight Glow -->
+        <ellipse cx="540" cy="380" rx="360" ry="240" fill="url(#stadiumGlow)"/>
+
+        <!-- Pedestrian / Access Roads -->
+        <path d="M 0 540 Q 220 500 500 480 T 1200 440" fill="none" stroke="url(#roadGrad)" stroke-width="26" stroke-linecap="round"/>
+        <path d="M 220 500 L 220 340 L 480 340 L 520 200 L 800 240 L 1000 320 L 1000 500" fill="none" stroke="url(#roadGrad)" stroke-width="14" stroke-dasharray="10 6" stroke-linecap="round"/>
+
+        <!-- Parking Bay Marking lines -->
+        <rect x="100" y="440" width="160" height="110" rx="10" fill="#111827" stroke="#374151" stroke-width="2"/>
+        <line x1="125" y1="440" x2="125" y2="550" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="8 6"/>
+        <line x1="160" y1="440" x2="160" y2="550" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="8 6"/>
+        <line x1="195" y1="440" x2="195" y2="550" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="8 6"/>
+        <line x1="230" y1="440" x2="230" y2="550" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="8 6"/>
+
+        <!-- Main Stadium Complex Oval -->
+        <g transform="translate(520, 360)">
+          <!-- Outer stadium ring -->
+          <ellipse cx="0" cy="0" rx="200" ry="120" fill="#1e293b" stroke="#38bdf8" stroke-width="4" filter="drop-shadow(0 15px 30px rgba(0,0,0,0.8))"/>
+          <!-- Stands ring -->
+          <ellipse cx="0" cy="0" rx="170" ry="95" fill="#0f172a" stroke="#0ea5e9" stroke-width="2"/>
+          <!-- Pitch center -->
+          <ellipse cx="0" cy="0" rx="110" ry="55" fill="#15803d" stroke="#22c55e" stroke-width="2"/>
+          <ellipse cx="0" cy="0" rx="28" ry="14" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+          <line x1="0" y1="-55" x2="0" y2="55" stroke="#ffffff" stroke-width="1.5"/>
+
+          <!-- Stadium 4 Floodlight Towers -->
+          <circle cx="-180" cy="-90" r="8" fill="#38bdf8" filter="drop-shadow(0 0 10px #38bdf8)"/>
+          <circle cx="180" cy="-90" r="8" fill="#38bdf8" filter="drop-shadow(0 0 10px #38bdf8)"/>
+          <circle cx="-180" cy="90" r="8" fill="#38bdf8" filter="drop-shadow(0 0 10px #38bdf8)"/>
+          <circle cx="180" cy="90" r="8" fill="#38bdf8" filter="drop-shadow(0 0 10px #38bdf8)"/>
+        </g>
+
+        <!-- Training Pitch (Mini pitch on right) -->
+        <g transform="translate(860, 330)">
+          <rect x="-70" y="-45" width="140" height="90" rx="8" fill="#166534" stroke="#22c55e" stroke-width="2"/>
+          <circle cx="0" cy="0" r="14" fill="none" stroke="#ffffff" stroke-width="1.2"/>
+          <line x1="0" y1="-45" x2="0" y2="45" stroke="#ffffff" stroke-width="1.2"/>
+        </g>
+
+        <!-- Medical Center Helipad (Top right) -->
+        <g transform="translate(980, 260)">
+          <circle cx="0" cy="0" r="32" fill="#1e293b" stroke="#ef4444" stroke-width="2.5"/>
+          <circle cx="0" cy="0" r="24" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <text x="0" y="8" font-size="22" font-family="Arial, sans-serif" font-weight="900" fill="#ef4444" text-anchor="middle">H</text>
+        </g>
+      </svg>
+
+      <!-- 7 FLOATING INTERACTIVE FACILITY PINS (SCREENSHOT 3 EXACT LOCATIONS) -->
+      {% for f in facilities %}
+        <div class="campus-fac-pin {{ f.pos_class }}" id="pin-{{ f.name }}" onclick="openUpgradeModal('{{ f.name }}')">
+
+          <!-- Percentage progress bar on top (Screenshot 3: 90%, 50%) -->
+          <div class="pin-progress-wrap">
+            <span class="pin-pct-text">{{ f.pct_display }}%</span>
+            <div class="pin-pct-bar">
+              <span class="pin-pct-fill {% if f.name=='stadium' %}fill-gold{% else %}fill-green{% endif %}" style="width: {{ f.pct_display }}%;"></span>
+            </div>
+          </div>
+
+          <!-- Building Title & Level Badge -->
+          <div class="pin-title-box">
+            <span class="pin-title-name">{{ f.title }}</span>
+            <span class="pin-lvl-badge">CẤP {{ f.level }}</span>
+          </div>
+
+          <!-- Construction indicator (if upgrading) -->
+          {% if f.remaining and f.remaining > 0 %}
+            <div class="pin-building-timer">
+              <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor" style="vertical-align:-1px; margin-right:2px;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+              {{ f.remaining }}s
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+    </div>
+
+    <!-- LIST VIEW (OPTIONAL TOGGLE FOR QUICK COMPARISON) -->
+    <div class="campus-list-viewport" id="campusListView" style="display: none;">
+      <div class="grid" style="gap: 16px;">
+        {% for f in facilities %}
+          <div class="col-4">
+            <div class="facility-card card-glow-cyan">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div class="fac-icon" style="font-size: 36px;">{{ f.icon }}</div>
+                <span class="badge warn" style="font-size: 13px; font-weight: 800;">⭐ CẤP {{ f.level }}</span>
+              </div>
+              <h3 style="margin: 10px 0 4px 0; color: #fff; font-size: 17px;">{{ f.title }}</h3>
+              <p class="muted" style="font-size: 13px; min-height: 48px; line-height: 1.5; margin: 0 0 12px 0;">
+                {{ f.desc }}
+              </p>
+              <div style="background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;">
+                <div class="muted" style="font-size: 11px; text-transform: uppercase;">Hiệu quả hiện tại:</div>
+                <b style="color: #38bdf8;">{{ f.benefit_current }}</b>
+              </div>
+              <button class="button primary" type="button" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="openUpgradeModal('{{ f.name }}')">
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                Chi tiết nâng cấp
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =====================================================================
+       FACILITY UPGRADE DRAWER / MODAL (HIỆU ỨNG XỊN XÒ)
+       ===================================================================== -->
+  <div class="fac-modal-backdrop" id="facModalBackdrop" style="display: none;" onclick="if(event.target===this) closeFacModal()">
+    <div class="fac-modal-card" role="dialog" aria-modal="true">
+
+      <!-- Modal Header -->
+      <div class="fac-modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="fac-modal-icon" id="fModalIcon">🏟️</div>
+          <div>
+            <h2 class="fac-modal-title" id="fModalTitle">Sân Vận Động Chính</h2>
+            <span class="badge warn" id="fModalLevel">CẤP 1</span>
+          </div>
+        </div>
+        <button class="fac-modal-close" type="button" onclick="closeFacModal()" title="Đóng">✕</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="fac-modal-body">
+        <p class="muted" id="fModalDesc" style="font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+          Mở rộng sức chứa khán đài chỗ ngồi, đón nhiều CĐV hơn và tăng mạnh tiền bán vé mỗi trận.
+        </p>
+
+        <!-- Comparison Table: Current vs Next Level -->
+        <div class="fac-compare-card">
+          <div class="fcc-col">
+            <span class="muted" style="font-size: 12px; text-transform: uppercase;">HIỆN TẠI (CẤP <span id="fCurLvl">1</span>)</span>
+            <div class="fcc-val" id="fCurBenefit">Sức chứa: 2,500 chỗ</div>
+          </div>
+          <div class="fcc-arrow">➔</div>
+          <div class="fcc-col fcc-next">
+            <span class="muted" style="font-size: 12px; text-transform: uppercase; color: #4ade80;">NÂNG CẤP (CẤP <span id="fNextLvl">2</span>)</span>
+            <div class="fcc-val text-green" id="fNextBenefit">Sức chứa: 4,000 chỗ</div>
+          </div>
+        </div>
+
+        <!-- Construction Status if Active -->
+        <div id="fActiveTimerWrap" style="display: none; margin-top: 14px; padding: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+              Đang thi công nâng cấp...
+            </span>
+            <b style="color: #fbbf24;" id="fRemainingTime">25s</b>
+          </div>
+          <div class="bar"><span style="width: 65%; background: #f59e0b;"></span></div>
+        </div>
+
+        <!-- Upgrade Action Buttons -->
+        <div class="fac-actions-grid" style="margin-top: 20px;">
+          <!-- Normal Upgrade (Cash + Time) -->
+          <form id="fFormNormal" method="post" action="" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="button primary fac-action-btn" type="submit" id="btnNormalUpgrade">
+              <div>
+                <div style="font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                  NÂNG CẤP TIỀN MẶT
+                </div>
+                <div style="font-size: 12px; opacity: 0.85;">Chi phí: <span id="fCostCash">350,000</span> • Thời gian: <span id="fTimeSec">30s</span></div>
+              </div>
+            </button>
+          </form>
+
+          <!-- Instant Upgrade (Token) -->
+          <form id="fFormInstant" method="post" action="" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="button gold fac-action-btn" type="submit">
+              <div>
+                <div style="font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                  HOÀN THÀNH TỨC THÌ
+                </div>
+                <div style="font-size: 12px; opacity: 0.85;">Tiêu hao: <b>5 Tokens</b> (Xong ngay)</div>
+              </div>
+            </button>
+          </form>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
-  <!-- 4 ISOMETRIC FACILITY CARDS -->
-  <div class="facility-grid">
-    {% for f in facilities %}
-      <div class="facility-card">
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div class="fac-icon">
-              {% if f.name == "stadium" %}🏟️{% endif %}
-              {% if f.name == "training_ground" %}⚡{% endif %}
-              {% if f.name == "medical_center" %}🏥{% endif %}
-              {% if f.name == "youth_academy" %}🎓{% endif %}
-            </div>
-
-            <div class="fac-level">
-              <span class="badge warn" style="font-size: 13px; font-weight: 800;">
-                ⭐ CẤP {{ f.level }}
-              </span>
-            </div>
-          </div>
-
-          <div class="fac-title">
-            {% if f.name == "stadium" %}Sân Vận Động Chính{% endif %}
-            {% if f.name == "training_ground" %}Trung Tâm Huấn Luyện{% endif %}
-            {% if f.name == "medical_center" %}Trung Tâm Y Tế & Phục Hồi{% endif %}
-            {% if f.name == "youth_academy" %}Học Viện Đào Tạo Trẻ{% endif %}
-          </div>
-
-          <p class="muted" style="margin-top: 8px; font-size: 13px; line-height: 1.6;">
-            {% if f.name == "stadium" %}
-              Tăng sức chứa khán giả, tăng doanh thu tiền vé mỗi trận và giảm nguy cơ chấn thương thi đấu.
-            {% elif f.name == "training_ground" %}
-              Gia tăng tốc độ tập luyện (+XP) và giảm đáng kể tỉ lệ dính chấn thương trong các buổi tập.
-            {% elif f.name == "medical_center" %}
-              Trang thiết bị hiện đại giúp các cầu thủ chấn thương hồi phục nhanh hơn nhiều ngày.
-            {% elif f.name == "youth_academy" %}
-              Đào tạo và sản sinh ra các tài năng trẻ U18 triển vọng chất lượng cao định kỳ mỗi 7 ngày.
-            {% endif %}
-          </p>
-        </div>
-
-        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
-          {% if f.remaining and f.remaining > 0 %}
-            <div style="margin-bottom: 10px;">
-              <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-                <span class="badge warn">Đang thi công</span>
-                <b style="color: var(--accent-gold);">Còn {{ f.remaining }} giây</b>
-              </div>
-              <div class="bar"><span style="width: 70%; background: var(--accent-gold);"></span></div>
-            </div>
-            <a class="button secondary" href="{{ url_for('facilities') }}" style="width: 100%;">
-              🔁 Cập nhật tiến độ
-            </a>
-          {% else %}
-            <form method="post" action="{{ url_for('upgrade', name=f.name) }}" onsubmit="return confirm('Nâng cấp lên Cấp {{ f.next_level }} với chi phí {{ fmt_money(f.next_cost) }} tiền mặt? Thời gian: {{ f.next_time }}s');" style="margin: 0;">
-              <button class="button primary" type="submit" style="width: 100%;">
-                ⬆️ Lên Cấp {{ f.next_level }} ({{ fmt_money(f.next_cost) }})
-              </button>
-            </form>
-          {% endif %}
-        </div>
-      </div>
-    {% endfor %}
+  <!-- UPGRADE CELEBRATION EFFECT TOAST -->
+  <div class="upgrade-celebration-toast" id="upgradeToast" style="display: none;">
+    <div class="uct-particles">✨ 🌟 💫 ⚡</div>
+    <div class="uct-text">NÂNG CẤP THÀNH CÔNG!</div>
   </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const facilitiesData = {{ facilities|tojson }};
+    const facMap = {};
+    facilitiesData.forEach(f => { facMap[f.name] = f; });
+
+    function switchCampusView(view) {
+      const v3d = document.getElementById('campus3DView');
+      const vList = document.getElementById('campusListView');
+      const b3d = document.getElementById('btnView3D');
+      const bList = document.getElementById('btnViewList');
+
+      if (view === '3d') {
+        v3d.style.display = 'block';
+        vList.style.display = 'none';
+        b3d.classList.add('active');
+        bList.classList.remove('active');
+      } else {
+        v3d.style.display = 'none';
+        vList.style.display = 'block';
+        b3d.classList.remove('active');
+        bList.classList.add('active');
+      }
+    }
+
+    function openUpgradeModal(name) {
+      const f = facMap[name];
+      if (!f) return;
+
+      document.getElementById('fModalIcon').textContent = f.icon;
+      document.getElementById('fModalTitle').textContent = f.title;
+      document.getElementById('fModalLevel').textContent = '⭐ CẤP ' + f.level;
+      document.getElementById('fModalDesc').textContent = f.desc;
+
+      document.getElementById('fCurLvl').textContent = f.level;
+      document.getElementById('fCurBenefit').textContent = f.benefit_current;
+      document.getElementById('fNextLvl').textContent = f.next_level;
+      document.getElementById('fNextBenefit').textContent = f.benefit_next;
+
+      document.getElementById('fCostCash').textContent = '$' + Number(f.next_cost).toLocaleString();
+      document.getElementById('fTimeSec').textContent = f.next_time + 's';
+
+      document.getElementById('fFormNormal').action = "/upgrade/" + f.name;
+      document.getElementById('fFormInstant').action = "/upgrade_instant/" + f.name;
+
+      const timerWrap = document.getElementById('fActiveTimerWrap');
+      if (f.remaining && f.remaining > 0) {
+        timerWrap.style.display = 'block';
+        document.getElementById('fRemainingTime').textContent = f.remaining + 's';
+        document.getElementById('btnNormalUpgrade').disabled = true;
+      } else {
+        timerWrap.style.display = 'none';
+        document.getElementById('btnNormalUpgrade').disabled = false;
+      }
+
+      document.getElementById('facModalBackdrop').style.display = 'flex';
+    }
+
+    function closeFacModal() {
+      document.getElementById('facModalBackdrop').style.display = 'none';
+    }
+
+    function openQuickUpgradeModal() {
+      // Pick first non-upgrading facility
+      const first = facilitiesData.find(f => !f.remaining || f.remaining <= 0) || facilitiesData[0];
+      if (first) openUpgradeModal(first.name);
+    }
+  </script>
 {% endblock %}

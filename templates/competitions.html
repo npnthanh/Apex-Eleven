@@ -1,113 +1,702 @@
 {% extends "base.html" %}
-{% block content %}
-  <div class="card card-glow-cyan" style="padding: 18px 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <div class="card-title" style="margin-bottom: 4px;">
-          <span class="icon">🏆</span>
-          <span>ĐẤU TRƯỜNG THI ĐẤU & BẢNG XẾP HẠNG (MATCH ARENA)</span>
-        </div>
-        <p class="muted" style="margin: 0;">
-          Theo dõi lịch thi đấu các giải (League, Cup, Champions Cup, Super Cup), dự đoán xác suất và thi đấu trực tiếp.
-        </p>
-      </div>
+{% block title %}Đấu Trường & Giải Đấu - {{ club.name }}{% endblock %}
+{% block page_title %}GIẢI ĐẤU & ĐẤU TRƯỜNG{% endblock %}
 
-      <div class="row">
-        <span class="badge cyan">CLB: <b>{{ club.name }}</b></span>
-        <span class="season-badge">Ngày {{ club.season_day }}</span>
-      </div>
+{% block content %}
+<div class="competitions-view-container">
+
+  <!-- TOP GAME TABS HUD (Screenshot 1 & 2) -->
+  <div class="comp-top-nav-bar">
+    <div class="comp-main-tabs">
+      <a class="comp-tab-btn {% if active_tab == 'standings' %}active{% endif %}"
+         href="{{ url_for('competitions', tab='standings', comp=selected_comp) }}">
+        <span>BẢNG XH</span>
+      </a>
+      <a class="comp-tab-btn {% if active_tab == 'matches' %}active{% endif %}"
+         href="{{ url_for('competitions', tab='matches', comp=selected_comp) }}">
+        <span>CÁC TRẬN ĐẤU</span>
+      </a>
+      <a class="comp-tab-btn {% if active_tab == 'stats' %}active{% endif %}"
+         href="{{ url_for('competitions', tab='stats', comp=selected_comp) }}">
+        <span>CHỈ SỐ CẦU THỦ</span>
+      </a>
+    </div>
+
+    <!-- Quick rules modal button -->
+    <div class="comp-nav-right">
+      <button class="btn-comp-guide" type="button" onclick="openCompRulesModal()" title="Luật thi đấu các giải">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+      </button>
     </div>
   </div>
 
-  <div class="grid">
-    <!-- LEFT COLUMN: MATCHES TO PLAY & RECENT RESULTS -->
-    <div class="col-6">
-      <!-- PENDING FIXTURES (MATCH CLASH CARDS) -->
-      <div class="card card-glow-gold">
-        <div class="card-header" style="border-bottom-color: rgba(255, 184, 0, 0.3);">
-          <div class="card-title" style="color: var(--accent-gold);">
-            <span class="icon">⚔️</span>
-            <span>TRẬN ĐẤU CẦN ĐÁ CỦA BẠN ({{ pending|length }})</span>
+  <!-- TOURNAMENT SELECTOR PILLS -->
+  <div class="tournament-selector-bar">
+    <a class="tour-pill {% if selected_comp == 'League' %}active{% endif %}"
+       href="{{ url_for('competitions', tab=active_tab, comp='League') }}">
+      <span class="tour-icon">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <defs>
+            <linearGradient id="premGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="50%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#b45309"/>
+            </linearGradient>
+          </defs>
+          <path d="M9 7 H23 V17 C23 21.5 19.5 24.5 16 24.5 C12.5 24.5 9 21.5 9 17 Z" fill="url(#premGold)" stroke="#fde047" stroke-width="1.2"/>
+          <path d="M9 10 C5 10 3 14 7 17 C8.5 18 9 17 9 17" stroke="#fbbf24" stroke-width="2" fill="none"/>
+          <path d="M23 10 C27 10 29 14 25 17 C23.5 18 23 17 23 17" stroke="#fbbf24" stroke-width="2" fill="none"/>
+          <rect x="11" y="27" width="10" height="3" rx="1.5" fill="url(#premGold)"/>
+          <rect x="14" y="24" width="4" height="3.5" fill="#78350f"/>
+        </svg>
+      </span>
+      <div class="tour-pill-info">
+        <span class="tour-name">Giải VĐQG</span>
+        <span class="tour-sub">20 Đội • Top 4 C1 • Top 5-8 C2</span>
+      </div>
+    </a>
+
+    <a class="tour-pill {% if selected_comp == 'Champions' %}active{% endif %}"
+       href="{{ url_for('competitions', tab=active_tab, comp='Champions') }}">
+      <span class="tour-icon">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <defs>
+            <linearGradient id="uclGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="50%" stop-color="#2563eb"/>
+              <stop offset="100%" stop-color="#1e1b4b"/>
+            </linearGradient>
+          </defs>
+          <circle cx="16" cy="16" r="13" fill="url(#uclGrad)" stroke="#60a5fa" stroke-width="1.5"/>
+          <polygon points="16,5 18,11 24,11 19,15 21,21 16,17 11,21 13,15 8,11 14,11" fill="#ffffff" filter="drop-shadow(0 0 4px #38bdf8)"/>
+        </svg>
+      </span>
+      <div class="tour-pill-info">
+        <span class="tour-name">Champions League</span>
+        <span class="tour-sub">C1 • 32 Đội • 8 Bảng Đấu</span>
+      </div>
+    </a>
+
+    <a class="tour-pill {% if selected_comp == 'Europa' %}active{% endif %}"
+       href="{{ url_for('competitions', tab=active_tab, comp='Europa') }}">
+      <span class="tour-icon">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <defs>
+            <linearGradient id="uelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fb923c"/>
+              <stop offset="60%" stop-color="#ea580c"/>
+              <stop offset="100%" stop-color="#7c2d12"/>
+            </linearGradient>
+          </defs>
+          <path d="M10 6 L22 6 L19 23 C19 25 13 25 13 23 Z" fill="url(#uelGrad)" stroke="#fdba74" stroke-width="1.2"/>
+          <path d="M16 23 V27" stroke="#ea580c" stroke-width="3"/>
+          <rect x="11" y="27" width="10" height="3" rx="1.5" fill="#f97316"/>
+        </svg>
+      </span>
+      <div class="tour-pill-info">
+        <span class="tour-name">Europa League</span>
+        <span class="tour-sub">C2 • 16 Đội Hạng 5-8</span>
+      </div>
+    </a>
+
+    <a class="tour-pill {% if selected_comp == 'ApexCup' %}active{% endif %}"
+       href="{{ url_for('competitions', tab=active_tab, comp='ApexCup') }}">
+      <span class="tour-icon">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+          <defs>
+            <linearGradient id="apexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ef4444"/>
+              <stop offset="50%" stop-color="#b91c1c"/>
+              <stop offset="100%" stop-color="#450a0a"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 3 L26 7 V16 C26 23 16 29 16 29 C16 29 6 23 6 16 V7 Z" fill="url(#apexGrad)" stroke="#f87171" stroke-width="1.5"/>
+          <polygon points="16,8 18.5,13.5 24,14 20,18 21,23.5 16,20.5 11,23.5 12,18 8,14 13.5,13.5" fill="#fbbf24"/>
+        </svg>
+      </span>
+      <div class="tour-pill-info">
+        <span class="tour-name">Cúp Quốc Gia Apex</span>
+        <span class="tour-sub">64 Đội • 32 Cặp Đấu 2 Lượt</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 1: BẢNG XẾP HẠNG (Screenshot 1)         -->
+  <!-- ========================================== -->
+  {% if active_tab == 'standings' %}
+    {% if selected_comp == 'League' %}
+      <div class="te-league-table-card">
+        <div class="te-table-header-row">
+          <div class="te-th th-team">ĐỘI</div>
+          <div class="te-th th-stat">ST</div>
+          <div class="te-th th-stat">T</div>
+          <div class="te-th th-stat">H</div>
+          <div class="te-th th-stat">B</div>
+          <div class="te-th th-stat">BT</div>
+          <div class="te-th th-stat">BB</div>
+          <div class="te-th th-stat">HS</div>
+          <div class="te-th th-pts">Đ</div>
+          <div class="te-th th-form">PHONG ĐỘ</div>
+        </div>
+
+        <div class="te-table-body">
+          {% for r in standings %}
+            {% set is_user = r.is_user %}
+            <div class="te-table-row zone-{{ r.zone }} {% if is_user %}is-user-team{% endif %}">
+              <!-- Rank & Trend Indicator -->
+              <div class="te-td-rank-group">
+                <div class="te-rank-num">{{ r.rank }}</div>
+                <div class="te-trend-icon trend-{{ r.trend }}">
+                  {% if r.trend == 'up' %}
+                    <span class="arrow-up">▲</span>
+                  {% elif r.trend == 'down' %}
+                    <span class="arrow-down">▼</span>
+                  {% else %}
+                    <span class="dash">—</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Team Badge & Name -->
+              <div class="te-td-team">
+                <div class="te-team-logo-frame">
+                  <span class="te-team-logo-icon">{{ r.logo }}</span>
+                </div>
+                <div class="te-team-name-col">
+                  <span class="te-team-name {% if is_user %}user-highlight{% endif %}">{{ r.team }}</span>
+                  {% if is_user %}
+                    <span class="user-pill-tag">BẠN</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Numerical Stats (ST, T, H, B, BT, BB, HS, Đ) -->
+              <div class="te-td-stat">{{ r.P }}</div>
+              <div class="te-td-stat">{{ r.W }}</div>
+              <div class="te-td-stat">{{ r.D }}</div>
+              <div class="te-td-stat">{{ r.L }}</div>
+              <div class="te-td-stat">{{ r.GF }}</div>
+              <div class="te-td-stat">{{ r.GA }}</div>
+              <div class="te-td-stat hs-val">{{ r.GD }}</div>
+              <div class="te-td-pts">{{ r.PTS }}</div>
+
+              <!-- 5-Match Form (Screenshot 1: 5 colored badge squares/pills) -->
+              <div class="te-td-form">
+                {% for f_res in r.form5 %}
+                  <span class="form-pill form-{{ f_res|lower }}" title="{% if f_res == 'T' %}Thắng{% elif f_res == 'H' %}Hòa{% else %}Bại{% endif %}">
+                    {{ f_res }}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Footnote Legend -->
+        <div class="te-table-legend">
+          <div class="legend-item">
+            <span class="legend-stripe c1-stripe"></span>
+            <span>Top 1 - 4: Suất tham dự <b>UEFA Champions League (C1)</b></span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-stripe c2-stripe"></span>
+            <span>Top 5 - 8: Suất tham dự <b>UEFA Europa League (C2)</b></span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-stripe rel-stripe"></span>
+            <span>Hạng 18 - 20: Xuống hạng Hạng Nhất</span>
+          </div>
+        </div>
+      </div>
+
+    {% elif selected_comp in ['Champions', 'Europa'] %}
+      <!-- C1 / C2 GROUP STAGE TABLES -->
+      <div class="groups-grid-layout">
+        {% set grp_dict = champions_groups if selected_comp == 'Champions' else europa_groups %}
+        {% for g_name, g_rows in grp_dict.items() %}
+          <div class="group-stage-card">
+            <div class="group-card-head">
+              <span class="group-title-label">{{ g_name }}</span>
+              <span class="group-badge">4 Đội • 6 Lượt trận</span>
+            </div>
+
+            <div class="group-table-wrap">
+              <table class="group-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Đội bóng</th>
+                    <th>ST</th>
+                    <th>T</th>
+                    <th>H</th>
+                    <th>B</th>
+                    <th>HS</th>
+                    <th>Đ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for gr in g_rows %}
+                    <tr class="{% if gr.advancing %}advancing-row{% endif %} {% if gr.is_user %}is-user-group-team{% endif %}">
+                      <td class="g-rank-col">
+                        {% if gr.advancing %}
+                          <span class="g-adv-dot" title="Suất vé Vòng 1/8">✓</span>
+                        {% endif %}
+                        {{ gr.rank }}
+                      </td>
+                      <td class="g-team-col">
+                        <span class="g-team-logo">{{ gr.logo }}</span>
+                        <span class="g-team-name {% if gr.is_user %}user-highlight{% endif %}">{{ gr.team }}</span>
+                        {% if gr.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                      </td>
+                      <td>{{ gr.P }}</td>
+                      <td>{{ gr.W }}</td>
+                      <td>{{ gr.D }}</td>
+                      <td>{{ gr.L }}</td>
+                      <td>{{ gr.GD }}</td>
+                      <td class="g-pts-col">{{ gr.PTS }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="group-card-foot">
+              <span class="adv-legend-text">Top 2 đội giành quyền vào Vòng Knockout 1/8 (2 lượt)</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    {% elif selected_comp == 'ApexCup' %}
+      <!-- CÚP QUỐC GIA APEX: 64 ĐỘI 32 CẶP ĐẤU 2 LƯỢT LOẠI TRỰC TIẾP -->
+      <div class="apex-cup-knockout-container">
+        <div class="cup-intro-banner">
+          <div class="cup-banner-icon">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none">
+              <path d="M16 2 L27 6 V16 C27 24 16 30 16 30 C16 30 5 24 5 16 V6 Z" fill="url(#apexGrad)" stroke="#f87171" stroke-width="1.8"/>
+              <polygon points="16,8 19,14 25,14.5 20.5,19 22,25 16,21.5 10,25 11.5,19 7,14.5 13,14" fill="#fbbf24"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; color: #fff;">Cúp Quốc Gia Apex (Apex National Cup)</h3>
+            <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">
+              64 Đội bóng tranh tài theo thể thức loại trực tiếp 2 lượt (Lượt đi & Lượt về). Tính tổng tỉ số (Aggregate), luật bàn thắng sân khách và luân lưu penalty.
+            </p>
           </div>
         </div>
 
+        {% if cup_rounds|length == 0 %}
+          <div class="empty-state-card">
+            <p class="muted">Các cặp đấu Cúp Quốc Gia Apex đang được bốc thăm.</p>
+          </div>
+        {% else %}
+          {% for r_data in cup_rounds %}
+            <div class="cup-round-section">
+              <div class="cup-round-title">
+                <span class="round-badge-pill">Vòng {{ r_data.round }}</span>
+                <span class="round-label-text">{{ r_data.label }}</span>
+                <span class="round-matches-count">{{ r_data.ties|length }} Cặp đấu</span>
+              </div>
+
+              <div class="cup-ties-grid">
+                {% for tie in r_data.ties %}
+                  <div class="cup-tie-card {% if tie.has_user %}tie-has-user{% endif %}">
+                    <div class="tie-header">
+                      <span class="tie-code">{{ tie.tie_id }}</span>
+                      {% if tie.has_user %}<span class="user-pill-tag">TRẬN CỦA BẠN</span>{% endif %}
+                      {% if tie.agg_str %}
+                        <span class="agg-badge">Tổng: {{ tie.agg_str }}</span>
+                      {% else %}
+                        <span class="agg-badge pending">Chưa hoàn tất 2 lượt</span>
+                      {% endif %}
+                    </div>
+
+                    <!-- Leg 1 -->
+                    <div class="tie-leg-row">
+                      <span class="leg-tag">Lượt 1 (Ngày {{ tie.leg1.day if tie.leg1 else '?' }})</span>
+                      {% if tie.leg1 and tie.leg1.played %}
+                        <div class="leg-score-line">
+                          <span class="t-name {% if tie.leg1.home == club.name %}user-highlight{% endif %}">{{ tie.leg1.home }}</span>
+                          <span class="score-pill">{{ tie.leg1.home_goals }} - {{ tie.leg1.away_goals }}</span>
+                          <span class="t-name {% if tie.leg1.away == club.name %}user-highlight{% endif %}">{{ tie.leg1.away }}</span>
+                        </div>
+                      {% else %}
+                        <div class="leg-score-line">
+                          <span class="t-name">{{ tie.leg1.home if tie.leg1 else tie.team1 }}</span>
+                          <span class="vs-text">vs</span>
+                          <span class="t-name">{{ tie.leg1.away if tie.leg1 else tie.team2 }}</span>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <!-- Leg 2 -->
+                    <div class="tie-leg-row">
+                      <span class="leg-tag">Lượt 2 (Ngày {{ tie.leg2.day if tie.leg2 else '?' }})</span>
+                      {% if tie.leg2 and tie.leg2.played %}
+                        <div class="leg-score-line">
+                          <span class="t-name {% if tie.leg2.home == club.name %}user-highlight{% endif %}">{{ tie.leg2.home }}</span>
+                          <span class="score-pill">{{ tie.leg2.home_goals }} - {{ tie.leg2.away_goals }}</span>
+                          <span class="t-name {% if tie.leg2.away == club.name %}user-highlight{% endif %}">{{ tie.leg2.away }}</span>
+                        </div>
+                      {% else %}
+                        <div class="leg-score-line">
+                          <span class="t-name">{{ tie.leg2.home if tie.leg2 else tie.team2 }}</span>
+                          <span class="vs-text">vs</span>
+                          <span class="t-name">{{ tie.leg2.away if tie.leg2 else tie.team1 }}</span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% endif %}
+
+  <!-- ========================================== -->
+  <!-- TAB 2: CHỈ SỐ CẦU THỦ (Screenshot 2)        -->
+  <!-- ========================================== -->
+  {% elif active_tab == 'stats' %}
+    <div class="player-stats-screen-container">
+
+      <!-- Filter Bar for Stats: All or By Specific Competition -->
+      <div class="stats-filter-bar">
+        <span class="stats-filter-label">Thống kê theo giải đấu:</span>
+        <a class="stats-chip {% if selected_comp == 'League' %}active{% endif %}"
+           href="{{ url_for('competitions', tab='stats', comp='League') }}">Giải VĐQG</a>
+        <a class="stats-chip {% if selected_comp == 'Champions' %}active{% endif %}"
+           href="{{ url_for('competitions', tab='stats', comp='Champions') }}">Champions League</a>
+        <a class="stats-chip {% if selected_comp == 'ApexCup' %}active{% endif %}"
+           href="{{ url_for('competitions', tab='stats', comp='ApexCup') }}">Cúp Apex</a>
+        <a class="stats-chip {% if selected_comp == 'all' %}active{% endif %}"
+           href="{{ url_for('competitions', tab='stats', comp='all') }}">Toàn bộ giải</a>
+      </div>
+
+      <!-- 3 WHITE HERO STAT CARDS (Screenshot 2) -->
+      <div class="stats-three-columns-grid">
+
+        <!-- COLUMN 1: BÀN THẮNG (TOP SCORERS) -->
+        <div class="stat-white-card">
+          <div class="stat-card-top-bar">
+            <div class="stat-bar-title">
+              <span class="stat-gold-boot-ico">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                  <path d="M2 18 L6 18 L10 15 L14 15 L20 18 L22 17 L22 13 L17 9 L13 9 L10 12 L4 12 Z" fill="#f59e0b" stroke="#d97706" stroke-width="1.2"/>
+                  <circle cx="6" cy="18" r="1.5" fill="#78350f"/>
+                  <circle cx="12" cy="18" r="1.5" fill="#78350f"/>
+                  <circle cx="18" cy="18" r="1.5" fill="#78350f"/>
+                </svg>
+              </span>
+              <span class="stat-title-txt">BÀN THẮNG</span>
+            </div>
+            <div class="stat-bar-right-ico">
+              <span class="gift-box-ico">
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="#fbbf24"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0115 5h2a1 1 0 011 1v3a1 1 0 01-1 1h-1v7a2 2 0 01-2 2H6a2 2 0 01-2-2v-7H3a1 1 0 01-1-1V6a1 1 0 011-1h2zm4-1a1 1 0 00-1 1h2a1 1 0 00-1-1zm3 1a1 1 0 00-1-1 1 1 0 00-1 1h2zm-7 7v6h4v-6H5zm6 6v-6h4v6h-4z" clip-rule="evenodd"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="stat-card-content">
+            {% if leaderboards.scorers and leaderboards.scorers|length > 0 %}
+              <!-- TOP 1 SCORER (HERO BLOCK) -->
+              {% set s1 = leaderboards.scorers[0] %}
+              <div class="hero-top1-block">
+                <div class="hero-top1-left">
+                  <div class="hero-rank-tag">1.</div>
+                  <div class="hero-info">
+                    <div class="hero-player-name">{{ s1.player_name }}</div>
+                    <div class="hero-team-row">
+                      <span class="hero-club-logo">{{ s1.club_logo }}</span>
+                      <span class="hero-club-name">{{ s1.team_name|upper }}</span>
+                      {% if s1.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3D Jersey Display -->
+                <div class="hero-jersey-wrapper">
+                  <div class="jersey-3d-graphic" style="--jersey-main: {{ s1.jersey_color }};">
+                    <svg viewBox="0 0 100 100" class="jersey-svg">
+                      <path d="M 25 15 L 40 30 L 60 30 L 75 15 L 90 28 L 78 50 L 75 90 L 25 90 L 22 50 L 10 28 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+                      <path d="M 40 30 C 45 42, 55 42, 60 30 Z" fill="#d97706" />
+                      <line x1="25" y1="88" x2="75" y2="88" stroke="#d97706" stroke-width="3" />
+                      <line x1="12" y1="32" x2="22" y2="48" stroke="#d97706" stroke-width="2" />
+                      <line x1="88" y1="32" x2="78" y2="48" stroke="#d97706" stroke-width="2" />
+                      <text x="50" y="65" font-size="7" font-weight="900" text-anchor="middle" fill="#d97706" font-family="Arial, sans-serif">TOUCHLINE</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Big Value -->
+                <div class="hero-big-number">{{ s1.value_str }}</div>
+              </div>
+
+              <!-- RANKS 2 TO 5 -->
+              <div class="sub-ranks-list">
+                {% for s in leaderboards.scorers[1:5] %}
+                  <div class="sub-rank-row {% if s.is_user %}is-user-stat-row{% endif %}">
+                    <div class="sub-rank-left">
+                      <span class="sub-rank-num">{{ s.rank }}.</span>
+                      <div class="sub-player-col">
+                        <div class="sub-pname-row">
+                          <span class="sub-flag-ico">{{ s.country_flag }}</span>
+                          <span class="sub-player-name">{{ s.player_name }}</span>
+                          {% if s.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                        </div>
+                        <div class="sub-team-sub">
+                          <span class="sub-club-logo">{{ s.club_logo }}</span>
+                          <span class="sub-team-name">{{ s.team_name }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="sub-rank-val">{{ s.value_str }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="stat-empty-note">Chưa có thông số bàn thắng nào.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- COLUMN 2: XẾP HẠNG (MVP RATING) -->
+        <div class="stat-white-card">
+          <div class="stat-card-top-bar">
+            <div class="stat-bar-title">
+              <span class="stat-gold-medal-ico">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                  <path d="M7 2 L12 11 L17 2 Z" fill="#3b82f6"/>
+                  <circle cx="12" cy="15" r="7" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+                  <polygon points="12,10 13.5,13.5 17,14 14.5,16.5 15,20 12,18 9,20 9.5,16.5 7,14 10.5,13.5" fill="#ffffff"/>
+                </svg>
+              </span>
+              <span class="stat-title-txt">XẾP HẠNG</span>
+            </div>
+            <div class="stat-bar-right-ico"></div>
+          </div>
+
+          <div class="stat-card-content">
+            {% if leaderboards.ratings and leaderboards.ratings|length > 0 %}
+              {% set r1 = leaderboards.ratings[0] %}
+              <div class="hero-top1-block">
+                <div class="hero-top1-left">
+                  <div class="hero-rank-tag">1.</div>
+                  <div class="hero-info">
+                    <div class="hero-player-name">{{ r1.player_name }}</div>
+                    <div class="hero-team-row">
+                      <span class="hero-club-logo">{{ r1.club_logo }}</span>
+                      <span class="hero-club-name">{{ r1.team_name|upper }}</span>
+                      {% if r1.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hero-jersey-wrapper">
+                  <div class="jersey-3d-graphic">
+                    <svg viewBox="0 0 100 100" class="jersey-svg">
+                      <path d="M 25 15 L 40 30 L 60 30 L 75 15 L 90 28 L 78 50 L 75 90 L 25 90 L 22 50 L 10 28 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+                      <path d="M 40 30 C 45 42, 55 42, 60 30 Z" fill="#0284c7" />
+                      <line x1="25" y1="88" x2="75" y2="88" stroke="#0284c7" stroke-width="3" />
+                      <text x="50" y="65" font-size="7" font-weight="900" text-anchor="middle" fill="#0284c7" font-family="Arial, sans-serif">TOUCHLINE</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="hero-big-number">{{ r1.value_str }}</div>
+              </div>
+
+              <div class="sub-ranks-list">
+                {% for r in leaderboards.ratings[1:5] %}
+                  <div class="sub-rank-row {% if r.is_user %}is-user-stat-row{% endif %}">
+                    <div class="sub-rank-left">
+                      <span class="sub-rank-num">{{ r.rank }}.</span>
+                      <div class="sub-player-col">
+                        <div class="sub-pname-row">
+                          <span class="sub-flag-ico">{{ r.country_flag }}</span>
+                          <span class="sub-player-name">{{ r.player_name }}</span>
+                          {% if r.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                        </div>
+                        <div class="sub-team-sub">
+                          <span class="sub-club-logo">{{ r.club_logo }}</span>
+                          <span class="sub-team-name">{{ r.team_name }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="sub-rank-val">{{ r.value_str }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="stat-empty-note">Chưa có thông số điểm đánh giá.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- COLUMN 3: KIẾN TẠO (TOP ASSISTS) -->
+        <div class="stat-white-card">
+          <div class="stat-card-top-bar">
+            <div class="stat-bar-title">
+              <span class="stat-gold-boot-ico">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                  <path d="M2 18 L6 18 L10 15 L14 15 L20 18 L22 17 L22 13 L17 9 L13 9 L10 12 L4 12 Z" fill="#22c55e" stroke="#16a34a" stroke-width="1.2"/>
+                  <circle cx="6" cy="18" r="1.5" fill="#14532d"/>
+                  <circle cx="12" cy="18" r="1.5" fill="#14532d"/>
+                  <circle cx="18" cy="18" r="1.5" fill="#14532d"/>
+                </svg>
+              </span>
+              <span class="stat-title-txt">KIẾN TẠO</span>
+            </div>
+            <div class="stat-bar-right-ico"></div>
+          </div>
+
+          <div class="stat-card-content">
+            {% if leaderboards.assists and leaderboards.assists|length > 0 %}
+              {% set a1 = leaderboards.assists[0] %}
+              <div class="hero-top1-block">
+                <div class="hero-top1-left">
+                  <div class="hero-rank-tag">1.</div>
+                  <div class="hero-info">
+                    <div class="hero-player-name">{{ a1.player_name }}</div>
+                    <div class="hero-team-row">
+                      <span class="hero-club-logo">{{ a1.club_logo }}</span>
+                      <span class="hero-club-name">{{ a1.team_name|upper }}</span>
+                      {% if a1.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hero-jersey-wrapper">
+                  <div class="jersey-3d-graphic">
+                    <svg viewBox="0 0 100 100" class="jersey-svg">
+                      <path d="M 25 15 L 40 30 L 60 30 L 75 15 L 90 28 L 78 50 L 75 90 L 25 90 L 22 50 L 10 28 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+                      <path d="M 40 30 C 45 42, 55 42, 60 30 Z" fill="#16a34a" />
+                      <line x1="25" y1="88" x2="75" y2="88" stroke="#16a34a" stroke-width="3" />
+                      <text x="50" y="65" font-size="7" font-weight="900" text-anchor="middle" fill="#16a34a" font-family="Arial, sans-serif">TOUCHLINE</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="hero-big-number">{{ a1.value_str }}</div>
+              </div>
+
+              <div class="sub-ranks-list">
+                {% for a in leaderboards.assists[1:5] %}
+                  <div class="sub-rank-row {% if a.is_user %}is-user-stat-row{% endif %}">
+                    <div class="sub-rank-left">
+                      <span class="sub-rank-num">{{ a.rank }}.</span>
+                      <div class="sub-player-col">
+                        <div class="sub-pname-row">
+                          <span class="sub-flag-ico">{{ a.country_flag }}</span>
+                          <span class="sub-player-name">{{ a.player_name }}</span>
+                          {% if a.is_user %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                        </div>
+                        <div class="sub-team-sub">
+                          <span class="sub-club-logo">{{ a.club_logo }}</span>
+                          <span class="sub-team-name">{{ a.team_name }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="sub-rank-val">{{ a.value_str }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="stat-empty-note">Chưa có thông số kiến tạo nào.</div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: CÁC TRẬN ĐẤU (FIXTURES & RESULTS)   -->
+  <!-- ========================================== -->
+  {% elif active_tab == 'matches' %}
+    <div class="matches-tab-layout">
+
+      <!-- PENDING FIXTURES (YOUR CLUB) -->
+      <div class="matches-pending-section">
+        <div class="section-title-hud">
+          <span class="title-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-1.41-1.41L13.17 14H8v-2h5.17l-2.58-2.59L12 8l5 5z"/></svg>
+          </span>
+          <span>TRẬN ĐẤU CẦN ĐÁ CỦA BẠN ({{ pending|length }})</span>
+        </div>
+
         {% if pending|length == 0 %}
-          <div style="text-align: center; padding: 24px 0;">
-            <p class="muted">Hiện tại không có trận đấu nào đang chờ.</p>
+          <div class="no-pending-card">
+            <p class="muted">Hiện không có trận nào đang chờ. Hãy sang ngày để bước vào vòng đấu tiếp theo.</p>
             <form method="post" action="{{ url_for('do_advance_day') }}" style="margin-top: 10px;">
-              <button class="button primary" type="submit">⏭️ Sang ngày thi đấu tiếp theo</button>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="button primary" type="submit">Sang ngày thi đấu tiếp theo ›</button>
             </form>
           </div>
         {% else %}
-          <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="pending-fixtures-grid">
             {% for f in pending %}
               {% set pr = previews.get(f.id) %}
-              <div class="playercard" style="border: 1px solid rgba(0, 240, 255, 0.4); background: linear-gradient(135deg, rgba(23, 37, 84, 0.75), rgba(15, 23, 42, 0.95)); padding: 16px; margin-bottom: 0;">
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <span class="badge cyan">🏆 {{ f.competition }} • {{ f.round }}</span>
+              <div class="playercard fixture-hero-card">
+                <div class="fixture-card-top">
+                  <span class="badge cyan">{{ f.competition }} • Vòng {{ f.round }}</span>
                   <span class="badge">Ngày {{ f.day }}</span>
                 </div>
 
-                <!-- Teams Clash View -->
-                <div style="display: flex; justify-content: space-around; align-items: center; margin: 12px 0;">
-                  <div style="text-align: center; flex: 1;">
-                    <b style="font-size: 16px; color: {% if f.home == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
-                      {{ f.home }}
-                    </b>
-                    {% if f.home == club.name %}<div class="muted" style="font-size: 11px;">(Đội của bạn)</div>{% endif %}
+                <!-- Teams Clash Display -->
+                <div class="clash-visual-stage">
+                  <div class="clash-team-box home-box">
+                    <div class="team-name-lg {% if f.home == club.name %}user-highlight{% endif %}">{{ f.home }}</div>
+                    {% if f.home == club.name %}<div class="team-role-sub">(Sân nhà - Đội của bạn)</div>{% endif %}
                   </div>
 
-                  <div style="text-align: center; padding: 0 14px;">
+                  <div class="clash-center-badge">
                     {% if f.played %}
-                      <div class="clash-score" style="font-size: 26px;">{{ f.home_goals }} - {{ f.away_goals }}</div>
+                      <div class="clash-score-big">{{ f.home_goals }} - {{ f.away_goals }}</div>
                     {% else %}
-                      <div class="clash-vs" style="font-size: 22px;">VS</div>
+                      <div class="clash-vs-big">VS</div>
                     {% endif %}
                   </div>
 
-                  <div style="text-align: center; flex: 1;">
-                    <b style="font-size: 16px; color: {% if f.away == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
-                      {{ f.away }}
-                    </b>
-                    {% if f.away == club.name %}<div class="muted" style="font-size: 11px;">(Đội của bạn)</div>{% endif %}
+                  <div class="clash-team-box away-box">
+                    <div class="team-name-lg {% if f.away == club.name %}user-highlight{% endif %}">{{ f.away }}</div>
+                    {% if f.away == club.name %}<div class="team-role-sub">(Sân khách - Đội của bạn)</div>{% endif %}
                   </div>
                 </div>
 
-                <!-- Match Prediction / Probability Meter -->
+                <!-- Odds Meter & xG Prediction -->
                 {% if pr %}
-                  <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700;">
-                      <span style="color: var(--accent-green);">Thắng: {{ pr.win }}%</span>
-                      <span style="color: var(--accent-gold);">Hòa: {{ pr.draw }}%</span>
-                      <span style="color: var(--accent-red);">Thua: {{ pr.loss }}%</span>
+                  <div class="match-odds-box">
+                    <div class="odds-labels-row">
+                      <span class="odds-w">Thắng: {{ pr.win }}%</span>
+                      <span class="odds-d">Hòa: {{ pr.draw }}%</span>
+                      <span class="odds-l">Thua: {{ pr.loss }}%</span>
                     </div>
-
-                    <!-- Visual Probability Bar -->
                     <div class="wdl-bar">
                       <div class="wdl-w" style="width: {{ pr.win }}%;"></div>
                       <div class="wdl-d" style="width: {{ pr.draw }}%;"></div>
                       <div class="wdl-l" style="width: {{ pr.loss }}%;"></div>
                     </div>
-
-                    <div class="muted" style="font-size: 11.5px; text-align: center; margin-top: 6px;">
+                    <div class="xg-forecast-line">
                       Dự báo xG: <b>{{ pr.xg_u }}</b> (Bạn) vs <b>{{ pr.xg_o }}</b> (Đối thủ)
                     </div>
                   </div>
                 {% endif %}
 
-                <!-- Play Button -->
-                <div style="margin-top: 14px; text-align: right;">
+                <!-- Play Match CTA -->
+                <div class="fixture-card-actions">
                   {% if not f.played %}
                     <form method="post" action="{{ url_for('play_fixture', fid=f.id) }}" style="margin: 0;">
-                      <button class="button primary pulse" type="submit" style="width: 100%; padding: 11px; font-size: 16px;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="button primary pulse btn-play-fixture-direct" type="submit">
                         ⚔️ ĐÁ TRỰC TIẾP NGAY
                       </button>
                     </form>
                   {% else %}
-                    <a class="button secondary" href="{{ url_for('competitions') }}" style="width: 100%;">
-                      Đã đá ({{ f.home_goals }} - {{ f.away_goals }})
-                    </a>
+                    <div class="match-played-btn">
+                      Đã thi đấu ({{ f.home_goals }} - {{ f.away_goals }})
+                    </div>
                   {% endif %}
                 </div>
               </div>
@@ -116,124 +705,124 @@
         {% endif %}
       </div>
 
-      <!-- RECENT RESULTS TICKER -->
-      <div class="card" style="margin-top: 20px;">
-        <div class="card-header">
-          <div class="card-title">
-            <span class="icon">📜</span>
-            <span>KẾT QUẢ CÁC TRẬN ĐÃ ĐẤU</span>
-          </div>
+      <!-- ALL FIXTURES / RESULTS LIST OF SELECTED TOURNAMENT -->
+      <div class="matches-list-section">
+        <div class="section-title-hud">
+          <span class="title-icon">📜</span>
+          <span>DANH SÁCH LỊCH THI ĐẤU & KẾT QUẢ ({{ comp_matches|length }})</span>
         </div>
 
-        {% if recent|length == 0 %}
-          <p class="muted">Chưa có kết quả nào được ghi nhận.</p>
-        {% else %}
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Giải đấu</th>
-                  <th>Cặp đấu</th>
-                  <th style="text-align: right;">Tỉ số</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for m in recent %}
-                  <tr>
-                    <td><span class="badge">Ngày {{ m.day }}</span></td>
-                    <td><span class="badge cyan">{{ m.competition }}</span></td>
-                    <td>
-                      <b>{{ m.home }}</b> vs <b>{{ m.away }}</b>
-                    </td>
-                    <td style="text-align: right;">
-                      <span class="badge good" style="font-family: var(--font-game); font-size: 15px;">
-                        {{ m.home_goals }} - {{ m.away_goals }}
-                      </span>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- RIGHT COLUMN: LEAGUE STANDINGS TABLE -->
-    <div class="col-6">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span class="icon">📊</span>
-            <span>BẢNG XẾP HẠNG LEAGUE CHÍNH THỨC</span>
-          </div>
-          <span class="badge gold">Mùa 1</span>
-        </div>
-
-        <div class="table-wrap">
-          <table>
+        <div class="table-wrap fixtures-table-wrap">
+          <table class="te-clean-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Câu lạc bộ</th>
-                <th>Trận</th>
-                <th>T</th>
-                <th>H</th>
-                <th>B</th>
-                <th>BT</th>
-                <th>BB</th>
-                <th>HS</th>
-                <th>ĐIỂM</th>
+                <th>Vòng</th>
+                <th>Ngày</th>
+                <th>Đội nhà</th>
+                <th style="text-align: center;">Tỉ số / Trạng thái</th>
+                <th>Đội khách</th>
+                <th>Ghi chú</th>
               </tr>
             </thead>
             <tbody>
-              {% for r in standings %}
-                {% set is_user = (r.team == club.name) %}
-                <tr style="{% if is_user %}background: linear-gradient(90deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.04)); border-left: 3px solid var(--accent-cyan);{% elif r.rank <= 4 %}border-left: 3px solid rgba(0, 245, 118, 0.5);{% endif %}">
-                  <td>
-                    {% if r.rank == 1 %}
-                      <span style="color: var(--accent-gold); font-size: 16px;">🥇</span>
-                    {% elif r.rank == 2 %}
-                      <span style="color: #cbd5e1; font-size: 16px;">🥈</span>
-                    {% elif r.rank == 3 %}
-                      <span style="color: #b45309; font-size: 16px;">🥉</span>
+              {% for m in comp_matches %}
+                {% set has_u = (m.home == club.name or m.away == club.name) %}
+                <tr class="{% if has_u %}fixture-user-row{% endif %}">
+                  <td><span class="badge">Vòng {{ m.round }}</span></td>
+                  <td>Ngày {{ m.day }}</td>
+                  <td style="font-weight: 700; color: {% if m.home == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
+                    {{ m.home }}
+                    {% if m.home == club.name %}<span class="user-pill-tag">BẠN</span>{% endif %}
+                  </td>
+                  <td style="text-align: center;">
+                    {% if m.played %}
+                      <span class="score-badge-played">{{ m.home_goals }} - {{ m.away_goals }}</span>
                     {% else %}
-                      <b>{{ r.rank }}</b>
+                      <span class="score-badge-unplayed">Chưa đá</span>
                     {% endif %}
                   </td>
-                  <td>
-                    <b style="color: {% if is_user %}var(--accent-cyan){% else %}#fff{% endif %}; font-size: 14px;">
-                      {{ r.team }}
-                    </b>
-                    {% if is_user %}
-                      <span class="badge cyan" style="font-size: 10px; padding: 0 4px; margin-left: 4px;">BẠN</span>
-                    {% endif %}
+                  <td style="font-weight: 700; color: {% if m.away == club.name %}var(--accent-cyan){% else %}#fff{% endif %};">
+                    {{ m.away }}
+                    {% if m.away == club.name %}<span class="user-pill-tag">BẠN</span>{% endif %}
                   </td>
-                  <td>{{ r.P }}</td>
-                  <td>{{ r.W }}</td>
-                  <td>{{ r.D }}</td>
-                  <td>{{ r.L }}</td>
-                  <td>{{ r.GF }}</td>
-                  <td>{{ r.GA }}</td>
-                  <td>{{ r.GD }}</td>
                   <td>
-                    <b style="font-family: var(--font-game); font-size: 17px; color: {% if is_user %}var(--accent-cyan){% elif r.rank==1 %}var(--accent-gold){% else %}#fff{% endif %};">
-                      {{ r.PTS }}
-                    </b>
+                    {% if m.aggregate_score %}
+                      <span class="badge gold">{{ m.aggregate_score }}</span>
+                    {% elif m.group_name %}
+                      <span class="badge cyan">{{ m.group_name }}</span>
+                    {% else %}
+                      <span class="muted">—</span>
+                    {% endif %}
                   </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </div>
 
-        <div class="row" style="margin-top: 14px; font-size: 12px; gap: 8px;">
-          <span style="display: flex; align-items: center; gap: 4px; color: var(--accent-green);">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block;"></span> Top 4: Vé Champions Cup
-          </span>
-        </div>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- COMP RULES MODAL -->
+<div id="compRulesModal" class="comp-modal-overlay" style="display: none;" onclick="closeCompRulesModal(event)">
+  <div class="comp-modal-box" onclick="event.stopPropagation();">
+    <div class="comp-modal-head">
+      <div class="modal-title-wrap">
+        <span class="modal-ico">📖</span>
+        <h3 style="margin: 0; color: #fff;">LUẬT THI ĐẤU & CƠ CẤU GIẢI ĐẤU</h3>
+      </div>
+      <button class="modal-close-btn" type="button" onclick="closeCompRulesModal()">✕</button>
+    </div>
+
+    <div class="comp-modal-body">
+      <div class="rule-block">
+        <h4 style="color: var(--accent-cyan); margin: 0 0 6px 0;">1. 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Giải Vô Địch Quốc Gia (EPL Formula)</h4>
+        <p>Gồm 20 Câu Lạc Bộ (Đội của bạn cùng 19 đối thủ máy) thi đấu vòng tròn 2 lượt sân nhà & sân khách (38 vòng đấu, 380 trận). Mỗi vòng giải vô địch cách nhau 7 ngày; lịch cúp xen kẽ, mỗi đội có ít nhất 3 ngày giữa hai trận.</p>
+        <ul>
+          <li><b>Top 1 - 8:</b> Tăng 1 cấp CLB khi tổng kết mùa giải.</li>
+          <li><b>Top 1 - 4:</b> Đạt chuẩn giành vé trực tiếp tham dự Cúp C1 (UEFA Champions League).</li>
+          <li><b>Top 5 - 8:</b> Đạt chuẩn tham dự Cúp C2 (UEFA Europa League).</li>
+          <li><b>Hạng 18 - 20:</b> Không được thăng cấp. Trò chơi hiện xét tăng cấp cho top 8, giữ cấp từ hạng 9 trở xuống.</li>
+        </ul>
+      </div>
+
+      <div class="rule-block">
+        <h4 style="color: var(--accent-gold); margin: 0 0 6px 0;">2. ⭐ UEFA Champions League (Cúp C1) & UEFA Europa League (Cúp C2)</h4>
+        <p>Thể thức cúp trong trò chơi:</p>
+        <ul>
+          <li><b>C1:</b> 32 Đội bóng (Top 4 VĐQG + 28 CLB hàng đầu châu Âu như Real Madrid, Bayern, Barca, PSG...) bốc thăm vào 8 bảng đấu (A-H), đá 6 lượt trận. Top 2 mỗi bảng vào Vòng 1/8 Knockout 2 lượt.</li>
+          <li><b>C2:</b> Top 5 - 8 giải VĐQG cùng 12 đại diện quốc tế tranh tài gay cấn.</li>
+        </ul>
+      </div>
+
+      <div class="rule-block">
+        <h4 style="color: #22c55e; margin: 0 0 6px 0;">3. 🛡️ Cúp Quốc Gia Apex (Apex National Cup)</h4>
+        <p>Giải đấu cúp quy mô lớn nhất với <b>64 Đội bóng</b> tham gia, chia thành <b>32 cặp đấu loại trực tiếp 2 lượt (Lượt đi & Lượt về)</b>.</p>
+        <ul>
+          <li>Đội đi tiếp xác định bằng tổng tỉ số 2 lượt (Aggregate Score).</li>
+          <li>Tổng tỷ số hòa được phân định bằng luân lưu; kết quả được lưu, không bốc lại khi tải trang.</li>
+        </ul>
+      </div>
+
+      <div class="rule-block">
+        <h4 style="color: #e2e8f0; margin: 0 0 6px 0;">4. 📊 Hệ Thống Ghi Nhận Chỉ Số Cầu Thủ</h4>
+        <p>Cả 3 giải đấu đều có hệ thống tích lũy chỉ số chi tiết cho từng cầu thủ: Bàn thắng (Vua phá lưới), Kiến tạo (Vua kiến tạo), Điểm đánh giá (Rating MVP). Cầu thủ trong đội của bạn ra sân thi đấu sẽ tích lũy chỉ số và vinh danh trên bảng vàng!</p>
       </div>
     </div>
   </div>
+</div>
+
+<script>
+function openCompRulesModal() {
+  document.getElementById('compRulesModal').style.display = 'flex';
+}
+function closeCompRulesModal(e) {
+  if (!e || e.target.id === 'compRulesModal' || e.target.classList.contains('modal-close-btn')) {
+    document.getElementById('compRulesModal').style.display = 'none';
+  }
+}
+</script>
 {% endblock %}

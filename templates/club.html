@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+{% block title %}Câu Lạc Bộ - {{ club.name }}{% endblock %}
+{% block page_title %}CÂU LẠC BỘ{% endblock %}
+
+{% block content %}
+<div class="club-profile-container">
+
+  <!-- TOP CLUB NAVIGATION TABS (SCREENSHOT 1, 3, 4) -->
+  <div class="club-top-tabs-bar">
+    <a class="club-tab-pill {% if active_tab == 'tongquan' %}active{% endif %}"
+       href="{{ url_for('club_profile', tab='tongquan') }}">
+      <span>TỔNG QUAN</span>
+    </a>
+    <a class="club-tab-pill {% if active_tab == 'muagiai' %}active{% endif %}"
+       href="{{ url_for('club_profile', tab='muagiai') }}">
+      <span>THỐNG KÊ MÙA GIẢI</span>
+    </a>
+    <a class="club-tab-pill {% if active_tab == 'lichsu' %}active{% endif %}"
+       href="{{ url_for('club_profile', tab='lichsu') }}">
+      <span>THỐNG KÊ LỊCH SỬ CLB</span>
+    </a>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 1: TỔNG QUAN (SCREENSHOT 1 & 2)         -->
+  <!-- ========================================== -->
+  {% if active_tab == 'tongquan' %}
+    <div class="club-overview-layout">
+      <div class="club-sub-header-title">TỔNG QUAN</div>
+
+      <!-- WOODEN SHOWCASE CABINET (SCREENSHOT 1) -->
+      <div class="wooden-locker-showcase">
+        <!-- Team Name on Top Header of Locker -->
+        <div class="locker-top-header">
+          <span class="locker-club-title">{{ club.name }}</span>
+        </div>
+
+        <div class="locker-compartments-grid">
+
+          <!-- COMPARTMENT 1: HOME KIT (ÁO SÂN NHÀ) -->
+          <div class="locker-cell">
+            <div class="locker-cell-title">Áo sân nhà</div>
+            <div class="locker-jerseys-duo">
+              <!-- Player Home Kit (Red pattern) -->
+              <div class="jersey-hang-box player-home-hang">
+                <svg viewBox="0 0 120 120" class="showcase-jersey-svg">
+                  <defs>
+                    <pattern id="homeCheckPat" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                      <rect width="6" height="6" fill="#b91c1c"/>
+                      <rect x="6" width="6" height="6" fill="#dc2626"/>
+                      <rect y="6" width="6" height="6" fill="#dc2626"/>
+                      <rect x="6" y="6" width="6" height="6" fill="#b91c1c"/>
+                    </pattern>
+                  </defs>
+                  <!-- Shirt Body -->
+                  <path d="M 28 20 L 45 36 L 75 36 L 92 20 L 110 35 L 94 62 L 90 108 L 30 108 L 26 62 L 10 35 Z" fill="url(#homeCheckPat)" stroke="#7f1d1d" stroke-width="2"/>
+                  <!-- Collar -->
+                  <path d="M 45 36 C 50 50, 70 50, 75 36 Z" fill="#ffffff" />
+                  <!-- Crest Badge on Chest -->
+                  <circle cx="72" cy="50" r="7" fill="#ffffff" stroke="#991b1b" stroke-width="1.5"/>
+                  <path d="M 68 50 L 76 50 M 72 46 L 72 54" stroke="#991b1b" stroke-width="1.5"/>
+                  <!-- Brand logo on right chest -->
+                  <path d="M 46 48 Q 50 45 54 48 Q 50 51 46 48" fill="#ffffff"/>
+                </svg>
+              </div>
+
+              <!-- Goalkeeper Home Kit (Yellow long sleeves) -->
+              <div class="jersey-hang-box gk-home-hang">
+                <svg viewBox="0 0 120 120" class="showcase-jersey-svg">
+                  <!-- GK Yellow Long Sleeve Shirt -->
+                  <path d="M 32 24 L 46 38 L 74 38 L 88 24 L 115 50 L 102 70 L 98 106 L 86 106 L 88 64 L 84 106 L 36 106 L 32 64 L 34 106 L 22 106 L 18 70 L 5 50 Z" fill="#eab308" stroke="#ca8a04" stroke-width="2"/>
+                  <path d="M 46 38 C 52 48, 68 48, 74 38 Z" fill="#1e293b" />
+                  <path d="M 88 64 L 112 104 L 100 108 L 80 72 Z" fill="#ca8a04" opacity="0.4"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPARTMENT 2: CLUB CREST (HUY HIỆU & SAO VÀNG) -->
+          <div class="locker-cell crest-cell">
+            <div class="crest-showcase-wrapper">
+              <!-- 4 Gold Stars -->
+              <div class="four-gold-stars">
+                {% for _ in range(4) %}
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" class="star-gold-svg">
+                    <defs>
+                      <linearGradient id="crestStarG" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="50%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#b45309"/>
+                      </linearGradient>
+                    </defs>
+                    <polygon points="12,2 15,9 22,9.5 17,14.5 18.5,21.5 12,18 5.5,21.5 7,14.5 2,9.5 9,9" fill="url(#crestStarG)" stroke="#fde047" stroke-width="0.8" filter="drop-shadow(0 2px 5px rgba(245, 158, 11, 0.6))"/>
+                  </svg>
+                {% endfor %}
+              </div>
+
+              <!-- 3D Bavarian Crest Shield -->
+              <div class="crest-shield-3d">
+                <svg viewBox="0 0 120 140" class="crest-shield-svg">
+                  <defs>
+                    <linearGradient id="shieldBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8"/>
+                      <stop offset="50%" stop-color="#0284c7"/>
+                      <stop offset="100%" stop-color="#0369a1"/>
+                    </linearGradient>
+                    <linearGradient id="redBorderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#ef4444"/>
+                      <stop offset="100%" stop-color="#b91c1c"/>
+                    </linearGradient>
+                    <!-- Diamond Bavarian Lozenge Pattern -->
+                    <pattern id="bavarianDiamonds" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+                      <rect width="10" height="10" fill="#0284c7"/>
+                      <rect x="10" width="10" height="10" fill="#ffffff"/>
+                      <rect y="10" width="10" height="10" fill="#ffffff"/>
+                      <rect x="10" y="10" width="10" height="10" fill="#0284c7"/>
+                    </pattern>
+                  </defs>
+
+                  <!-- Outer Shield Drop Shadow and Cyan Glow -->
+                  <path d="M 60 10 C 95 10, 110 25, 110 65 C 110 105, 75 125, 60 135 C 45 125, 10 105, 10 65 C 10 25, 25 10, 60 10 Z"
+                        fill="url(#shieldBorderGrad)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.6))"/>
+
+                  <!-- White Inner Border -->
+                  <path d="M 60 16 C 90 16, 103 29, 103 65 C 103 100, 72 118, 60 127 C 48 118, 17 100, 17 65 C 17 29, 30 16, 60 16 Z"
+                        fill="#ffffff"/>
+
+                  <!-- Red Accent Border -->
+                  <path d="M 60 21 C 86 21, 97 32, 97 65 C 97 96, 70 112, 60 120 C 50 112, 23 96, 23 65 C 23 32, 34 21, 60 21 Z"
+                        fill="url(#redBorderGrad)"/>
+
+                  <!-- White Shield Core with Bavarian Rhombus -->
+                  <path d="M 60 27 C 82 27, 91 36, 91 65 C 91 91, 67 106, 60 112 C 53 106, 29 91, 29 65 C 29 36, 38 27, 60 27 Z"
+                        fill="url(#bavarianDiamonds)"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPARTMENT 3: AWAY KIT (ÁO SÂN KHÁCH) -->
+          <div class="locker-cell">
+            <div class="locker-cell-title">Áo sân khách</div>
+            <div class="locker-jerseys-duo">
+              <!-- Player Away Kit (White with black/red/gold slash) -->
+              <div class="jersey-hang-box player-away-hang">
+                <svg viewBox="0 0 120 120" class="showcase-jersey-svg">
+                  <!-- White Shirt Body -->
+                  <path d="M 28 20 L 45 36 L 75 36 L 92 20 L 110 35 L 94 62 L 90 108 L 30 108 L 26 62 L 10 35 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+                  <!-- Black Collar -->
+                  <path d="M 45 36 C 50 50, 70 50, 75 36 Z" fill="#1e293b" />
+                  <!-- Diagonal Color Stripes at Bottom Left -->
+                  <polygon points="30,80 50,108 30,108" fill="#dc2626"/>
+                  <polygon points="40,86 65,108 50,108" fill="#eab308"/>
+                  <polygon points="55,90 78,108 65,108" fill="#0f172a"/>
+                  <!-- Crest Badge on Chest -->
+                  <circle cx="72" cy="50" r="7" fill="#0f172a" stroke="#ca8a04" stroke-width="1.5"/>
+                  <path d="M 68 50 L 76 50 M 72 46 L 72 54" stroke="#ca8a04" stroke-width="1.5"/>
+                  <!-- Brand mark -->
+                  <path d="M 46 48 Q 50 45 54 48 Q 50 51 46 48" fill="#0f172a"/>
+                </svg>
+              </div>
+
+              <!-- Goalkeeper Away Kit (Dark Blue long sleeves) -->
+              <div class="jersey-hang-box gk-away-hang">
+                <svg viewBox="0 0 120 120" class="showcase-jersey-svg">
+                  <!-- Dark Blue GK Shirt -->
+                  <path d="M 32 24 L 46 38 L 74 38 L 88 24 L 115 50 L 102 70 L 98 106 L 86 106 L 88 64 L 84 106 L 36 106 L 32 64 L 34 106 L 22 106 L 18 70 L 5 50 Z" fill="#1e3a8a" stroke="#172554" stroke-width="2"/>
+                  <path d="M 46 38 C 52 48, 68 48, 74 38 Z" fill="#0f172a" />
+                  <path d="M 88 64 L 112 104 L 100 108 L 80 72 Z" fill="#1d4ed8" opacity="0.4"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CLUB DETAILS CARD (SCREENSHOT 2) -->
+      <div class="club-details-card">
+        <div class="details-card-header">
+          <span class="details-title-txt">Chi tiết về CLB</span>
+          <button class="btn-edit-club-pen" type="button" onclick="openClubEditModal()" title="Chỉnh sửa chi tiết CLB">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+          </button>
+        </div>
+
+        <div class="details-grid-table">
+          <!-- Row 1 -->
+          <div class="detail-cell">
+            <span class="detail-key">Cấp độ của CLB:</span>
+            <span class="detail-val">{{ club.club_level if 'club_level' in club.keys() else 1 }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-key">Sân vận động:</span>
+            <span class="detail-val">{{ club.stadium_name if 'stadium_name' in club.keys() else '—' }}</span>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="detail-cell">
+            <span class="detail-key">Ngày thành lập:</span>
+            <span class="detail-val">{{ club.founded_date if 'founded_date' in club.keys() else '—' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-key">Sức chứa:</span>
+            <span class="detail-val">{{ capacity }}</span>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="detail-cell">
+            <span class="detail-key">Quốc gia/vùng:</span>
+            <span class="detail-val">{{ club.country if 'country' in club.keys() else 'Việt Nam' }} {{ club.country_flag if 'country_flag' in club.keys() else '🇻🇳' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-key">HLV:</span>
+            <span class="detail-val">{{ club.manager_name if 'manager_name' in club.keys() else '—' }}</span>
+          </div>
+
+          <!-- Row 4 -->
+          <div class="detail-cell">
+            <span class="detail-key">Thành phố:</span>
+            <span class="detail-val">{{ club.city if 'city' in club.keys() else '—' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-key">Tên Fanclub:</span>
+            <span class="detail-val">{{ club.fanclub_name if 'fanclub_name' in club.keys() else '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 2: THỐNG KÊ MÙA GIẢI (SCREENSHOT 3)    -->
+  <!-- ========================================== -->
+  {% elif active_tab == 'muagiai' %}
+    <div class="season-stats-container">
+      <div class="club-sub-header-title">THỐNG KÊ MÙA GIẢI</div>
+
+      <!-- 4 COMPETITIONS TROPHIES HEADER (SCREENSHOT 3) -->
+      <div class="season-trophies-row">
+        <!-- Cup 1: Chuyên nghiệp (VĐQG) -->
+        <div class="trophy-track-card">
+          <div class="trophy-graphic-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <!-- Golden League Cup with Red Ribbons -->
+              <path d="M 30 20 L 70 20 L 65 75 C 65 90, 35 90, 35 75 Z" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+              <!-- Handles -->
+              <path d="M 30 30 C 10 35, 10 65, 36 68" fill="none" stroke="#d97706" stroke-width="4"/>
+              <path d="M 70 30 C 90 35, 90 65, 64 68" fill="none" stroke="#d97706" stroke-width="4"/>
+              <!-- Base -->
+              <path d="M 40 85 L 60 85 L 68 115 L 32 115 Z" fill="#b45309"/>
+              <!-- Red Ribbons hanging down -->
+              <path d="M 28 40 Q 20 80 25 110" stroke="#dc2626" stroke-width="3" fill="none"/>
+              <path d="M 72 40 Q 80 80 75 110" stroke="#dc2626" stroke-width="3" fill="none"/>
+            </svg>
+          </div>
+          <div class="trophy-track-name">CHUYÊN NGHIỆP</div>
+          <div class="trophy-track-status">{{ season_stats.league_status }}</div>
+        </div>
+
+        <!-- Cup 2: Giải CN Tài Năng (Champions League C1) -->
+        <div class="trophy-track-card">
+          <div class="trophy-graphic-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <!-- Silver Big Ears Cup with Blue Ribbons -->
+              <path d="M 32 20 L 68 20 L 64 75 C 64 88, 36 88, 36 75 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+              <!-- Big Ear Handles -->
+              <path d="M 32 25 C 8 20, 8 70, 38 65" fill="none" stroke="#94a3b8" stroke-width="4"/>
+              <path d="M 68 25 C 92 20, 92 70, 62 65" fill="none" stroke="#94a3b8" stroke-width="4"/>
+              <path d="M 42 85 L 58 85 L 65 115 L 35 115 Z" fill="#64748b"/>
+              <path d="M 30 35 Q 22 75 26 105" stroke="#0284c7" stroke-width="3" fill="none"/>
+              <path d="M 70 35 Q 78 75 74 105" stroke="#0284c7" stroke-width="3" fill="none"/>
+            </svg>
+          </div>
+          <div class="trophy-track-name">GIẢI CN TÀI NĂNG</div>
+          <div class="trophy-track-status">{{ season_stats.champions_status }}</div>
+        </div>
+
+        <!-- Cup 3: Cup (Cúp Quốc Gia Apex) -->
+        <div class="trophy-track-card">
+          <div class="trophy-graphic-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <!-- Green Ribbon Spiral Ball Cup -->
+              <circle cx="50" cy="35" r="14" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+              <path d="M 42 48 C 30 70, 32 95, 50 115 C 68 95, 70 70, 58 48" fill="none" stroke="#16a34a" stroke-width="6"/>
+              <path d="M 48 50 C 38 72, 40 92, 50 110" fill="none" stroke="#ffffff" stroke-width="3"/>
+              <rect x="35" y="112" width="30" height="8" rx="2" fill="#14532d"/>
+            </svg>
+          </div>
+          <div class="trophy-track-name">CUP</div>
+          <div class="trophy-track-status">{{ season_stats.cup_status }}</div>
+        </div>
+
+        <!-- Cup 4: Cúp Tuyệt Đỉnh (Super Cup) -->
+        <div class="trophy-track-card">
+          <div class="trophy-graphic-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <!-- Angel Wings Golden Trophy -->
+              <path d="M 28 20 C 35 60, 45 80, 50 100 C 55 80, 65 60, 72 20 Z" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+              <circle cx="50" cy="65" r="8" fill="#eab308"/>
+              <rect x="36" y="105" width="28" height="10" rx="3" fill="#854d0e"/>
+            </svg>
+          </div>
+          <div class="trophy-track-name">CÚP TUYỆT ĐỈNH</div>
+          <div class="trophy-track-status">{{ season_stats.supercup_status }}</div>
+        </div>
+      </div>
+
+      <!-- BIG WIN / DRAW / LOSS STAT BAR (SCREENSHOT 3) -->
+      <div class="big-wdl-banner">
+        <div class="wdl-banner-col w-col">
+          <span class="wdl-num">{{ season_stats.wins }}</span>
+          <span class="wdl-label">THẮNG</span>
+          <div class="wdl-line-bar line-w"></div>
+        </div>
+        <div class="wdl-banner-col d-col">
+          <span class="wdl-num">{{ season_stats.draws }}</span>
+          <span class="wdl-label">HÒA</span>
+          <div class="wdl-line-bar line-d"></div>
+        </div>
+        <div class="wdl-banner-col l-col">
+          <span class="wdl-num">{{ season_stats.losses }}</span>
+          <span class="wdl-label">BẠI</span>
+          <div class="wdl-line-bar line-l"></div>
+        </div>
+      </div>
+
+      <!-- WHITE DETAILED STATS TABLE (SCREENSHOT 3) -->
+      <div class="white-stats-table-box">
+        <div class="stat-dual-grid">
+          <!-- Row 1 -->
+          <div class="stat-key-row">
+            <span class="st-key">Bàn thắng được ghi:</span>
+            <span class="st-val">{{ season_stats.goals_for }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Thắng đậm nhất:</span>
+            <span class="st-val">{{ season_stats.biggest_win }}</span>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="stat-key-row">
+            <span class="st-key">Bàn bại:</span>
+            <span class="st-val">{{ season_stats.goals_against }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Ra sân nhiều nhất:</span>
+            <span class="st-val">{{ season_stats.most_apps }}</span>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="stat-key-row">
+            <span class="st-key">Lượng khán giả trung bình:</span>
+            <span class="st-val">{{ season_stats.avg_attendance }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Nhiều bàn thắng nhất:</span>
+            <span class="st-val">{{ season_stats.top_scorer }}</span>
+          </div>
+
+          <!-- Row 4 -->
+          <div class="stat-key-row">
+            <span class="st-key">Mạch thắng dài nhất:</span>
+            <span class="st-val">{{ season_stats.max_win_streak }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Kiến tạo nhiều nhất:</span>
+            <span class="st-val">{{ season_stats.top_assister }}</span>
+          </div>
+
+          <!-- Row 5 -->
+          <div class="stat-key-row">
+            <span class="st-key">Mạch bất bại dài nhất:</span>
+            <span class="st-val">{{ season_stats.max_unbeaten }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Nhiều bàn nhất trận:</span>
+            <span class="st-val">{{ season_stats.most_goals_one_match }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: THỐNG KÊ LỊCH SỬ CLB (SCREENSHOT 4) -->
+  <!-- ========================================== -->
+  {% elif active_tab == 'lichsu' %}
+    <div class="history-stats-container">
+      <div class="club-sub-header-title">THỐNG KÊ TỔNG THỂ</div>
+
+      <!-- 5 TROPHIES CABINET WITH COUNTS (SCREENSHOT 4) -->
+      <div class="history-trophies-row">
+        <!-- Trophy 1: League 4 -->
+        <div class="trophy-count-card">
+          <div class="trophy-count-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <path d="M 30 20 L 70 20 L 65 75 C 65 90, 35 90, 35 75 Z" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+              <path d="M 30 30 C 10 35, 10 65, 36 68" fill="none" stroke="#d97706" stroke-width="4"/>
+              <path d="M 70 30 C 90 35, 90 65, 64 68" fill="none" stroke="#d97706" stroke-width="4"/>
+              <path d="M 40 85 L 60 85 L 68 115 L 32 115 Z" fill="#b45309"/>
+              <path d="M 28 40 Q 20 80 25 110" stroke="#dc2626" stroke-width="3" fill="none"/>
+              <path d="M 72 40 Q 80 80 75 110" stroke="#dc2626" stroke-width="3" fill="none"/>
+            </svg>
+            <span class="trophy-big-num">{{ history_stats.league_titles }}</span>
+          </div>
+          <div class="trophy-track-name">CHUYÊN NGHIỆP</div>
+        </div>
+
+        <!-- Trophy 2: Champions League 3 -->
+        <div class="trophy-count-card">
+          <div class="trophy-count-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <path d="M 32 20 L 68 20 L 64 75 C 64 88, 36 88, 36 75 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+              <path d="M 32 25 C 8 20, 8 70, 38 65" fill="none" stroke="#94a3b8" stroke-width="4"/>
+              <path d="M 68 25 C 92 20, 92 70, 62 65" fill="none" stroke="#94a3b8" stroke-width="4"/>
+              <path d="M 42 85 L 58 85 L 65 115 L 35 115 Z" fill="#64748b"/>
+              <path d="M 30 35 Q 22 75 26 105" stroke="#0284c7" stroke-width="3" fill="none"/>
+              <path d="M 70 35 Q 78 75 74 105" stroke="#0284c7" stroke-width="3" fill="none"/>
+            </svg>
+            <span class="trophy-big-num">{{ history_stats.champions_titles }}</span>
+          </div>
+          <div class="trophy-track-name">GIẢI CN TÀI NĂNG</div>
+        </div>
+
+        <!-- Trophy 3: Super Cup 0 -->
+        <div class="trophy-count-card">
+          <div class="trophy-count-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <path d="M 42 20 L 58 20 L 54 85 L 46 85 Z" fill="#d97706" stroke="#b45309" stroke-width="2"/>
+              <circle cx="50" cy="20" r="12" fill="#fbbf24"/>
+              <rect x="38" y="90" width="24" height="24" fill="#78350f" rx="3"/>
+            </svg>
+            <span class="trophy-big-num">{{ history_stats.supercup_titles }}</span>
+          </div>
+          <div class="trophy-track-name">GIẢI CNGHIỆP VÀNG</div>
+        </div>
+
+        <!-- Trophy 4: Cup 4 -->
+        <div class="trophy-count-card">
+          <div class="trophy-count-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <circle cx="50" cy="35" r="14" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+              <path d="M 42 48 C 30 70, 32 95, 50 115 C 68 95, 70 70, 58 48" fill="none" stroke="#16a34a" stroke-width="6"/>
+              <path d="M 48 50 C 38 72, 40 92, 50 110" fill="none" stroke="#ffffff" stroke-width="3"/>
+              <rect x="35" y="112" width="30" height="8" rx="2" fill="#14532d"/>
+            </svg>
+            <span class="trophy-big-num">{{ history_stats.cup_titles }}</span>
+          </div>
+          <div class="trophy-track-name">CUP</div>
+        </div>
+
+        <!-- Trophy 5: Cúp Tuyệt Đỉnh 3 -->
+        <div class="trophy-count-card">
+          <div class="trophy-count-wrap">
+            <svg viewBox="0 0 100 130" class="trophy-svg">
+              <path d="M 28 20 C 35 60, 45 80, 50 100 C 55 80, 65 60, 72 20 Z" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+              <circle cx="50" cy="65" r="8" fill="#eab308"/>
+              <rect x="36" y="105" width="28" height="10" rx="3" fill="#854d0e"/>
+            </svg>
+            <span class="trophy-big-num">{{ history_stats.ultimate_titles }}</span>
+          </div>
+          <div class="trophy-track-name">CÚP TUYỆT ĐỈNH</div>
+        </div>
+      </div>
+
+      <!-- BIG ALL-TIME STAT BAR (SCREENSHOT 4) -->
+      <div class="big-wdl-banner">
+        <div class="wdl-banner-col w-col">
+          <span class="wdl-num">{{ history_stats.wins }}</span>
+          <span class="wdl-label">THẮNG</span>
+          <div class="wdl-line-bar line-w"></div>
+        </div>
+        <div class="wdl-banner-col d-col">
+          <span class="wdl-num">{{ history_stats.draws }}</span>
+          <span class="wdl-label">HÒA</span>
+          <div class="wdl-line-bar line-d"></div>
+        </div>
+        <div class="wdl-banner-col l-col">
+          <span class="wdl-num">{{ history_stats.losses }}</span>
+          <span class="wdl-label">BẠI</span>
+          <div class="wdl-line-bar line-l"></div>
+        </div>
+      </div>
+
+      <!-- WHITE DETAILED STATS TABLE (SCREENSHOT 4) -->
+      <div class="white-stats-table-box">
+        <div class="stat-dual-grid">
+          <!-- Row 1 -->
+          <div class="stat-key-row">
+            <span class="st-key">Bàn thắng được ghi:</span>
+            <span class="st-val">{{ history_stats.goals_for }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Thắng đậm nhất:</span>
+            <span class="st-val">{{ history_stats.biggest_win }}</span>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="stat-key-row">
+            <span class="st-key">Bàn bại:</span>
+            <span class="st-val">{{ history_stats.goals_against }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Ra sân nhiều nhất:</span>
+            <span class="st-val">{{ history_stats.most_apps }}</span>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="stat-key-row">
+            <span class="st-key">Lượng khán giả trung bình:</span>
+            <span class="st-val">{{ history_stats.avg_attendance }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Nhiều bàn thắng nhất:</span>
+            <span class="st-val">{{ history_stats.top_scorer }}</span>
+          </div>
+
+          <!-- Row 4 -->
+          <div class="stat-key-row">
+            <span class="st-key">Mạch thắng dài nhất:</span>
+            <span class="st-val">{{ history_stats.longest_win }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Kiến tạo nhiều nhất:</span>
+            <span class="st-val">{{ history_stats.top_assister }}</span>
+          </div>
+
+          <!-- Row 5 -->
+          <div class="stat-key-row">
+            <span class="st-key">Mạch bất bại dài nhất:</span>
+            <span class="st-val">{{ history_stats.longest_unbeaten }}</span>
+          </div>
+          <div class="stat-key-row">
+            <span class="st-key">Nhiều bàn nhất trận:</span>
+            <span class="st-val">{{ history_stats.most_goals_one_match }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- MODAL CHỈNH SỬA CHI TIẾT CLB (BÚT CHÌ) -->
+<div id="clubEditModal" class="club-modal-overlay" style="display: none;" onclick="closeClubEditModal(event)">
+  <div class="club-modal-box" onclick="event.stopPropagation();">
+    <div class="club-modal-header">
+      <h3 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+        Chỉnh Sửa Chi Tiết Câu Lạc Bộ
+      </h3>
+      <button class="modal-close-btn" type="button" onclick="closeClubEditModal()">✕</button>
+    </div>
+
+    <form method="post" action="{{ url_for('club_update_profile') }}" style="margin: 0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="club-modal-body">
+        <div class="form-row-group">
+          <label>Tên Câu Lạc Bộ:</label>
+          <input type="text" name="club_name" value="{{ club.name }}" class="input-te" minlength="3" maxlength="28" required>
+        </div>
+
+        <div class="form-row-group">
+          <label>Tên Sân Vận Động:</label>
+          <input type="text" name="stadium_name" value="{{ club.stadium_name if 'stadium_name' in club.keys() else '—' }}" class="input-te" required>
+        </div>
+
+        <div class="form-row-group">
+          <label>Tên Huấn Luyện Viên:</label>
+          <input type="text" name="manager_name" value="{{ club.manager_name if 'manager_name' in club.keys() else '—' }}" class="input-te" required>
+        </div>
+
+        <div class="form-row-dual">
+          <div class="form-row-group">
+            <label>Quốc Gia:</label>
+            <input type="text" name="country" value="{{ club.country if 'country' in club.keys() else 'Việt Nam' }}" class="input-te">
+          </div>
+          <div class="form-row-group">
+            <label>Cờ Quốc Gia:</label>
+            <input type="text" name="country_flag" value="{{ club.country_flag if 'country_flag' in club.keys() else '🇻🇳' }}" class="input-te" style="width: 80px;">
+          </div>
+        </div>
+
+        <div class="form-row-group">
+          <label>Thành Phố:</label>
+          <input type="text" name="city" value="{{ club.city if 'city' in club.keys() else '—' }}" class="input-te">
+        </div>
+
+        <div class="form-row-group">
+          <label>Tên Hội Cổ Động Viên (Fanclub):</label>
+          <input type="text" name="fanclub_name" value="{{ club.fanclub_name if 'fanclub_name' in club.keys() else '—' }}" class="input-te">
+        </div>
+      </div>
+
+      <div class="club-modal-footer">
+        <button type="button" class="button secondary" onclick="closeClubEditModal()">Hủy Bỏ</button>
+        <button type="submit" class="button primary">Lưu Thay Đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openClubEditModal() {
+  document.getElementById('clubEditModal').style.display = 'flex';
+}
+function closeClubEditModal(e) {
+  if (!e || e.target.id === 'clubEditModal' || e.target.classList.contains('modal-close-btn')) {
+    document.getElementById('clubEditModal').style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

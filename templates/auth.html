@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ 'Tạo tài khoản' if mode == 'register' else 'Đăng nhập' }} | Băng Ghế Chỉ Đạo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-intro" aria-label="Băng Ghế Chỉ Đạo">
+      <a class="auth-brand" href="{{ url_for('auth.login') }}" style="display:inline-flex;align-items:center;gap:8px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="url(#authBallGrad)" stroke="#38bdf8" stroke-width="1.5"/><path d="M12 6l3.5 2.5v4.5L12 15.5l-3.5-2.5V8.5L12 6z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.2"/><defs><linearGradient id="authBallGrad" x1="2" y1="2" x2="22" y2="22"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient></defs></svg>
+        <span>BĂNG GHẾ CHỈ ĐẠO</span>
+        <span class="tag-proto">V3</span>
+      </a>
+      <span class="badge cyan">SỰ NGHIỆP HUẤN LUYỆN CỦA BẠN</span>
+      <h1>Đội bóng của bạn.<br>Dấu ấn của bạn.</h1>
+      <p>Xây dựng đội hình, phát triển cầu thủ và chinh phục từng mùa giải. Tiến trình được lưu riêng theo tài khoản để bạn tiếp tục bất cứ lúc nào.</p>
+      <div class="auth-pitch" aria-hidden="true">
+        <div class="auth-pitch-circle"></div>
+        <span style="--x:50%;--y:82%">1</span>
+        <span style="--x:22%;--y:62%">3</span>
+        <span style="--x:42%;--y:65%">4</span>
+        <span style="--x:62%;--y:65%">5</span>
+        <span style="--x:82%;--y:62%">2</span>
+        <span style="--x:23%;--y:40%">11</span>
+        <span style="--x:43%;--y:43%">6</span>
+        <span style="--x:63%;--y:43%">8</span>
+        <span style="--x:83%;--y:40%">7</span>
+        <span style="--x:42%;--y:19%">10</span>
+        <span style="--x:62%;--y:19%">9</span>
+      </div>
+      <div class="auth-features">
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#38bdf8" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke="#38bdf8" stroke-width="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="#38bdf8" stroke-width="2"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="#38bdf8" stroke-width="2"/></svg>
+          Đội hình riêng
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 9H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m12 5h3a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-3M6 3h12v7a6 6 0 0 1-12 0V3z" stroke="#facc15" stroke-width="1.8" stroke-linecap="round"/><path d="M12 16v5m-4 0h8" stroke="#facc15" stroke-width="2" stroke-linecap="round"/></svg>
+          Mùa giải riêng
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="#10b981" stroke-width="2"/><polyline points="17 21 17 13 7 13 7 21" stroke="#10b981" stroke-width="2"/><polyline points="7 3 7 8 15 8" stroke="#10b981" stroke-width="2"/></svg>
+          Tự động lưu
+        </span>
+      </div>
+    </section>
+
+    <section class="card auth-card" aria-labelledby="auth-title">
+      <div class="auth-tabs" aria-label="Tài khoản">
+        <a href="{{ url_for('auth.login') }}" {% if mode == 'login' %}aria-current="page" class="active"{% endif %}>Đăng nhập</a>
+        <a href="{{ url_for('auth.register') }}" {% if mode == 'register' %}aria-current="page" class="active"{% endif %}>Đăng ký</a>
+      </div>
+      <h2 id="auth-title">{{ 'Bắt đầu sự nghiệp' if mode == 'register' else 'Chào mừng trở lại' }}</h2>
+      <p class="muted auth-description">{{ 'Tạo tài khoản và đặt tên cho câu lạc bộ đầu tiên của bạn.' if mode == 'register' else 'Đăng nhập để tiếp tục dẫn dắt câu lạc bộ của bạn.' }}</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% for message in messages %}<div class="auth-notice" role="status">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      {% if errors %}
+        <div class="auth-errors" role="alert">
+          {% for error in errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('auth.register') if mode == 'register' else url_for('auth.login', next=request.args.get('next', '')) }}" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label for="username">Tên đăng nhập</label>
+          <input id="username" name="username" value="{{ username }}" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.\-]{3,32}" placeholder="Ví dụ: hlv_minh" required autofocus aria-describedby="username-help">
+          <small id="username-help" class="muted">3–32 ký tự, không dấu và không có khoảng trắng.</small>
+        </div>
+        {% if mode == 'register' %}
+          <div>
+            <label for="club_name">Tên đội bóng</label>
+            <input id="club_name" name="club_name" value="{{ club_name }}" minlength="2" maxlength="28" placeholder="Ví dụ: Sài Gòn FC" required>
+          </div>
+        {% endif %}
+        <div>
+          <label for="password">Mật khẩu</label>
+          <input id="password" name="password" type="password" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" {% if mode == 'register' %}minlength="8"{% endif %} maxlength="128" placeholder="{{ 'Ít nhất 8 ký tự' if mode == 'register' else 'Nhập mật khẩu của bạn' }}" required>
+        </div>
+        {% if mode == 'register' %}
+          <div>
+            <label for="confirm_password">Xác nhận mật khẩu</label>
+            <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Nhập lại mật khẩu" required>
+          </div>
+        {% endif %}
+        <button class="button primary auth-submit" type="submit">{{ 'Tạo tài khoản & bắt đầu' if mode == 'register' else 'Vào câu lạc bộ →' }}</button>
+      </form>
+      <p class="auth-switch muted">
+        {% if mode == 'register' %}Đã có tài khoản? <a href="{{ url_for('auth.login') }}">Đăng nhập</a>
+        {% else %}Chưa có tài khoản? <a href="{{ url_for('auth.register') }}">Tạo đội bóng của bạn</a>{% endif %}
+      </p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,270 +1,491 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- MATCHDAY HERO BROADCAST BANNER -->
-  {% if fixtures|length > 0 %}
-    {% set next_fix = fixtures[0] %}
-    <div class="fixture-clash-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span class="badge cyan">🏆 {{ next_fix.competition }} • {{ next_fix.round }}</span>
-        {% if next_fix.played %}
-          <span class="badge good">ĐÃ KẾT THÚC</span>
-        {% else %}
-          <span class="badge warn">TRẬN ĐẤU HÔM NAY</span>
-        {% endif %}
+  <!-- TOP ELEVEN SEASON ROYAL BANNER -->
+  <div class="season-royal-banner">
+    <div class="srb-left">
+      <div class="srb-shield-icon">
+        <svg viewBox="0 0 36 36" width="32" height="32" fill="none">
+          <defs>
+            <linearGradient id="srbGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="50%" stop-color="#eab308"/>
+              <stop offset="100%" stop-color="#92400e"/>
+            </linearGradient>
+          </defs>
+          <path d="M18 3 L30 8 V18 C30 25 18 31 18 31 C18 31 6 25 6 18 V8 Z" fill="url(#srbGold)" stroke="#fef08a" stroke-width="1.5"/>
+          <text x="18" y="22" font-family="'Rajdhani', sans-serif" font-size="14" font-weight="900" fill="#451a03" text-anchor="middle">S{{ club.season_number }}</text>
+        </svg>
       </div>
-
-      <div class="clash-teams">
-        <div class="clash-team home">
-          <div class="clash-crest">⚽</div>
-          <div class="clash-name">{{ next_fix.home }}</div>
-          <span class="badge" style="margin-top: 4px;">Chủ nhà</span>
+      <div class="srb-meta">
+        <div class="srb-title-row">
+          <span class="srb-badge-gold">MÙA {{ club.season_number }}</span>
+          <span class="srb-badge-lvl">CẤP ĐỘ {{ club.club_level }}</span>
+          <span class="srb-badge-day">NGÀY {{ club.season_day }}/{{ club.season_length }}</span>
         </div>
-
-        <div style="text-align: center;">
-          {% if next_fix.played %}
-            <div class="clash-score">{{ next_fix.home_goals }} - {{ next_fix.away_goals }}</div>
-            <div class="muted" style="font-size: 12px; margin-top: 4px;">FT (Full-time)</div>
-          {% else %}
-            <div class="clash-vs">VS</div>
-            <div style="margin-top: 8px;">
-              <a class="button primary pulse" href="{{ url_for('competitions') }}">
-                ⚔️ ĐÁ TRẬN NÀY
-              </a>
-            </div>
-          {% endif %}
-        </div>
-
-        <div class="clash-team away">
-          <div class="clash-crest">🛡️</div>
-          <div class="clash-name">{{ next_fix.away }}</div>
-          <span class="badge" style="margin-top: 4px;">Khách</span>
+        <div class="srb-subtext">
+          <span class="srb-rule">🏆 <b>Top 8</b> cuối mùa được thăng 1 cấp. Bước sang mùa mới: toàn đội tăng 1 tuổi và giảm 20% chỉ số.</span>
         </div>
       </div>
     </div>
-  {% else %}
-    <div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.6));">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-        <div>
-          <h2>⚽ HÔM NAY NGHỈ THI ĐẤU</h2>
-          <p class="muted">Không có trận đấu chính thức nào trong ngày {{ club.season_day }}. Bạn có thể tập luyện, mua sắm hoặc sang ngày tiếp theo.</p>
+
+    <div class="srb-right">
+      <div class="srb-progress-box" title="Tiến trình mùa giải: Ngày {{ club.season_day }}/{{ club.season_length }}">
+        <div class="srb-prog-label">
+          <span>Tiến Trình Mùa</span>
+          <b>{{ ((club.season_day / (club.season_length or 28)) * 100)|round(0)|int }}%</b>
         </div>
-        <div class="row">
-          <form method="post" action="{{ url_for('do_advance_day') }}">
-            <button class="button primary pulse" type="submit">⏭️ Sang ngày thi đấu tiếp</button>
-          </form>
-          <a class="button secondary" href="{{ url_for('friendly') }}">🤝 Đá giao hữu</a>
+        <div class="srb-bar-wrap">
+          <div class="srb-bar-fill" style="width: {{ ((club.season_day / (club.season_length or 28)) * 100)|round(0)|int }}%;"></div>
         </div>
       </div>
+      {% if club.cash_debt %}
+        <div class="srb-debt-badge">
+          <span class="debt-ico">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="#ef4444"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          </span>
+          <span class="debt-txt">Nợ lương: <b>{{ fmt_money(club.cash_debt) }}</b></span>
+        </div>
+      {% endif %}
     </div>
-  {% endif %}
+  </div>
+<!-- ==========================================================================
+     PHẦN 1: TIÊU ĐỀ TỔNG QUAN
+     ========================================================================== -->
+<div class="te-overview-bar">
+  <div class="overview-title-group">
+    <span class="overview-heading">TỔNG QUAN</span>
+  </div>
+  <div class="overview-actions">
+    <button class="btn-overview-assistant" type="button" onclick="openAssistantModal()" title="Báo cáo Trợ lý HLV">
+      <span class="ova-icon">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+      </span>
+      <span class="ova-badge">{{ (not manager_hub.daily_gift_claimed)|int + (not manager_hub.tv_contract_signed)|int + (not manager_hub.sponsor_contract_signed)|int }}</span>
+    </button>
+  </div>
+</div>
 
-  <!-- MAIN DASHBOARD GRID -->
-  <div class="grid">
-    <!-- LEFT COLUMN: CLUB STATS & TODAY SCHEDULE -->
-    <div class="col-8">
-      <!-- CLUB POWER & INFRASTRUCTURE STATS -->
-      <div class="card card-glow-cyan">
-        <div class="card-header">
-          <div class="card-title">
-            <span class="icon">📊</span>
-            <span>CHỈ SỐ & CƠ SỞ VẬT CHẤT CLB</span>
-          </div>
-          <span class="ovr-shield ovr-gold" title="OVR Đội Hình Trung Bình">{{ "%.0f"|format(avg_rating) }}</span>
-        </div>
+<!-- ==========================================================================
+     PHẦN 2: DƯỚI NỮA LÀ CÁC SỰ KIỆN (HIỆN TẠI CHƯA THÊM VÀO ĐỂ PHÁT TRIỂN SAU)
+     ========================================================================== -->
+<div class="events-carousel-dock">
+  <button class="carousel-arrow left" type="button" onclick="scrollEvents(-1)" title="Sự kiện trước">‹</button>
 
-        <div class="grid" style="gap: 12px;">
-          <div class="col-4">
-            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
-              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Rating Trung Bình</div>
-              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-gold); margin-top: 2px;">
-                ⭐ {{ "%.1f"|format(avg_rating) }}
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
-              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Sức Chứa Sân</div>
-              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-cyan); margin-top: 2px;">
-                🏟️ {{ effects.capacity }}
-              </div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
-              <div class="muted" style="font-size: 12px; text-transform: uppercase;">Tốc Độ Tập Luyện</div>
-              <div style="font-family: var(--font-game); font-size: 26px; font-weight: 900; color: var(--accent-green); margin-top: 2px;">
-                ⚡ x{{ "%.2f"|format(effects.train_gain_mult) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row" style="margin-top: 14px; gap: 8px;">
-          <span class="badge good">🛡️ Giảm chấn thương (trận): <b>x{{ "%.2f"|format(effects.match_injury_mult) }}</b></span>
-          <span class="badge good">🛡️ Giảm chấn thương (tập): <b>x{{ "%.2f"|format(effects.train_injury_mult) }}</b></span>
-          <span class="badge cyan">💊 Hồi phục y tế: <b>x{{ "%.2f"|format(effects.injury_days_mult) }}</b></span>
-        </div>
-
-        <div class="row" style="margin-top: 18px; border-top: 1px solid var(--border-subtle); padding-top: 14px; justify-content: space-between;">
-          <div class="row">
-            <form method="post" action="{{ url_for('do_advance_day') }}">
-              <button class="button primary" type="submit">⏭️ Sang ngày mới</button>
-            </form>
-            <a class="button secondary" href="{{ url_for('competitions') }}">📅 Xem giải đấu</a>
-          </div>
-
-          <form method="post" action="{{ url_for('reset_season') }}" onsubmit="return confirm('Reset mùa giải sẽ xóa lịch thi đấu hiện tại và tạo mới hoàn toàn. Bạn chắc chắn muốn reset?');">
-            <button class="button danger" type="submit" style="font-size: 13px; padding: 7px 12px;">🔄 Reset mùa giải</button>
-          </form>
+  <div class="events-scroll-wrap" id="eventsScrollWrap">
+    <!-- EVENT CARD 1: GIẢI VÔ ĐỊCH QUỐC GIA -->
+    <div class="event-banner-card event-ranked">
+      <div class="event-glow-overlay"></div>
+      <div class="event-badge-icon">
+        <div class="event-shield">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#fbbf24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
         </div>
       </div>
+      <div class="event-content">
+        <div class="event-tag">MÙA GIẢI HIỆN TẠI</div>
+        <div class="event-name">GIẢI VÔ ĐỊCH QUỐC GIA</div>
+        <span class="event-sub-badge">CẤP {{ club.club_level }} · MÙA {{ club.season_number }}</span>
+      </div>
+      <div class="event-status-tag">Ngày {{ club.season_day }}/{{ club.season_length }}</div>
+    </div>
 
-      <!-- TODAY FIXTURES SCHEDULE LIST -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span class="icon">📅</span>
-            <span>LỊCH THI ĐẤU HÔM NAY (NGÀY {{ club.season_day }})</span>
-          </div>
-          <a class="badge cyan" href="{{ url_for('competitions') }}">Chi tiết & Bảng xếp hạng →</a>
-        </div>
-
-        {% if fixtures|length == 0 %}
-          <p class="muted" style="padding: 16px 0; text-align: center;">Không có trận đấu nào trong hôm nay. Bấm "Sang ngày" để tiến tới lịch thi đấu tiếp theo.</p>
-        {% else %}
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Giải đấu</th>
-                  <th>Vòng</th>
-                  <th>Cặp đấu</th>
-                  <th>Trạng thái</th>
-                  <th style="text-align: right;">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for f in fixtures %}
-                  <tr>
-                    <td><span class="badge cyan">{{ f.competition }}</span></td>
-                    <td><span class="badge">{{ f.round }}</span></td>
-                    <td>
-                      <b>{{ f.home }}</b>
-                      <span style="color: var(--text-dim); margin: 0 4px;">vs</span>
-                      <b>{{ f.away }}</b>
-                    </td>
-                    <td>
-                      {% if f.played %}
-                        <span class="badge good">Đã đá: {{ f.home_goals }} - {{ f.away_goals }}</span>
-                      {% else %}
-                        <span class="badge warn">Chưa đá</span>
-                      {% endif %}
-                    </td>
-                    <td style="text-align: right;">
-                      {% if not f.played %}
-                        <a class="button primary" style="padding: 5px 12px; font-size: 13px;" href="{{ url_for('competitions') }}">
-                          ⚔️ Vào đá
-                        </a>
-                      {% else %}
-                        <span class="badge good">Hoàn tất</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% endif %}
+    <!-- EVENT CARD 2: PHÁT TRIỂN CẦU THỦ (TACTICS / MANAGER REWARD) -->
+    <div class="event-banner-card event-tactics">
+      <div class="event-glow-overlay"></div>
+      <div class="event-pitch-bg"></div>
+      <div class="event-content">
+        <div class="event-tag">TRUNG TÂM HUẤN LUYỆN</div>
+        <div class="event-name">PHÁT TRIỂN CẦU THỦ</div>
+        <div class="event-timer">Điểm tập hôm nay: {{ club.training_points_today }}/40</div>
+      </div>
+      <div class="event-action">
+        <button class="btn-event-action" type="button" onclick="openAssistantModal()">XEM</button>
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: MANAGER GAME TILES & CLUB SETTINGS -->
-    <div class="col-4">
-      <!-- FAST GAME TILES -->
-      <div class="card" style="padding: 14px;">
-        <div class="card-title" style="margin-bottom: 12px; font-size: 18px;">
-          <span class="icon">⚡</span>
-          <span>TRUNG TÂM QUẢN LÝ</span>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Tile 1: Lineup -->
-          <a href="{{ url_for('lineup') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 26px;">🧲</span>
-              <div>
-                <div style="font-weight: 800; font-size: 15px; color: #fff;">Đội Hình Chính</div>
-                <div class="muted" style="font-size: 12px;">Kéo thả 11 đá chính & chọn Đội trưởng</div>
-              </div>
-            </div>
-            <span style="color: var(--accent-cyan); font-size: 18px;">→</span>
-          </a>
-
-          <!-- Tile 2: Market -->
-          <a href="{{ url_for('market') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 26px;">🛒</span>
-              <div>
-                <div style="font-weight: 800; font-size: 15px; color: #fff;">Sàn Chuyển Nhượng</div>
-                <div class="muted" style="font-size: 12px;">Đấu giá cầu thủ thời gian thực (3 phút/phiên)</div>
-              </div>
-            </div>
-            <span style="color: var(--accent-gold); font-size: 18px;">→</span>
-          </a>
-
-          <!-- Tile 3: Training -->
-          <a href="{{ url_for('training') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 26px;">🏋️</span>
-              <div>
-                <div style="font-weight: 800; font-size: 15px; color: #fff;">Sân Tập Thể Lực</div>
-                <div class="muted" style="font-size: 12px;">Huấn luyện bài tập để tăng OVR & thể lực</div>
-              </div>
-            </div>
-            <span style="color: var(--accent-green); font-size: 18px;">→</span>
-          </a>
-
-          <!-- Tile 4: Friendly -->
-          <a href="{{ url_for('friendly') }}" class="playercard" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; margin-bottom: 0;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 26px;">🤝</span>
-              <div>
-                <div style="font-weight: 800; font-size: 15px; color: #fff;">Trận Đấu Giao Hữu</div>
-                <div class="muted" style="font-size: 12px;">Test đội hình & kiếm thêm tiền mặt mỗi ngày</div>
-              </div>
-            </div>
-            <span style="color: var(--accent-purple); font-size: 18px;">→</span>
-          </a>
-        </div>
+    <!-- EVENT CARD 3: GIẢI ĐẤU SIÊU CẤP (DỰ PHÒNG) -->
+    <div class="event-banner-card event-supercup">
+      <div class="event-glow-overlay"></div>
+      <div class="event-content">
+        <div class="event-tag">GIẢI ĐẤU MÙA GIẢI</div>
+        <div class="event-name">CÚP QUỐC GIA APEX</div>
+        <div class="event-timer">Lịch đá cách nhau tối thiểu 3 ngày</div>
       </div>
-
-      <!-- EDIT CLUB NAME -->
-      <div class="card">
-        <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">
-          <span class="icon">✏️</span>
-          <span>ĐỔI TÊN CÂU LẠC BỘ</span>
-        </div>
-        <p class="muted" style="margin-bottom: 12px;">Tên CLB sẽ cập nhật tức thì trên Bảng xếp hạng và các cúp đấu.</p>
-        <form method="post" action="{{ url_for('club_rename') }}">
-          <div style="display: flex; gap: 8px;">
-            <input name="new_name" placeholder="VD: Touchline Titans FC" value="{{ club.name }}" required>
-            <button class="button primary" type="submit" style="white-space: nowrap;">Lưu</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- TOP ELEVEN MANAGER TIPS -->
-      <div class="card" style="background: linear-gradient(135deg, rgba(255, 184, 0, 0.08), rgba(15, 23, 42, 0.85)); border-color: rgba(255, 184, 0, 0.3);">
-        <div class="card-title" style="color: var(--accent-gold); font-size: 17px; margin-bottom: 10px;">
-          <span class="icon">💡</span>
-          <span>CHIẾN THUẬT QUẢN LÝ TOP ELEVEN</span>
-        </div>
-        <ul style="color: var(--text-muted); line-height: 1.7; padding-left: 18px; font-size: 13px;">
-          <li>Giữ <b style="color:#fff;">Condition > 75%</b> trước mỗi trận để cầu thủ phát huy tối đa hiệu quả.</li>
-          <li>Ưu tiên nâng cấp <b style="color:var(--accent-gold);">Sân Tập & Trung Tâm Y Tế</b> để giảm tối đa chấn thương.</li>
-          <li>Đấu giá chuyển nhượng vào <b style="color:var(--accent-cyan);">15 giây cuối</b> để chốt cầu thủ giá hời!</li>
-        </ul>
+      <div class="event-action">
+        <a class="btn-event-action" href="{{ url_for('competitions') }}">XEM LỊCH</a>
       </div>
     </div>
   </div>
+
+  <button class="carousel-arrow right" type="button" onclick="scrollEvents(1)" title="Sự kiện kế tiếp">›</button>
+</div>
+
+<!-- ==========================================================================
+     PHẦN 3: THÔNG TIN TRẬN ĐẤU SẮP TỚI
+     Bao gồm: thời tiết (random), tên 2 đội, chất lượng đội hình 2 đội, phong độ 5 trận gần nhất
+     ========================================================================== -->
+{% if upcoming_match %}
+<div class="upcoming-clash-card">
+  <!-- TOP SUB-HEADER OF CLASH: WEATHER, NEXT MATCH TIME, HOME/AWAY STATUS -->
+  <div class="clash-topbar">
+    <div class="clash-weather-badge" title="Thời tiết thi đấu: {{ upcoming_match.weather.name }}">
+      <span class="weather-ico">{{ upcoming_match.weather.icon }}</span>
+      <span class="weather-txt">{{ upcoming_match.weather.name }}</span>
+    </div>
+
+    <div class="clash-schedule-badge">
+      <span class="sched-edit-ico">
+        <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      </span>
+      <span class="sched-label">Trận tiếp</span>
+      <b class="sched-time">{{ upcoming_match.time_label }}</b>
+    </div>
+
+    <div class="clash-venue-badge">
+      <span class="venue-txt">{% if upcoming_match.is_user_home %}ĐỘI NHÀ{% else %}SÂN KHÁCH{% endif %}</span>
+      <span class="venue-ico">
+        <svg viewBox="0 0 20 20" width="13" height="13" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- CLASH BODY: TEAM 1 (HOME) vs TEAM 2 (AWAY) WITH JERSEYS & FORM BADGES -->
+  <div class="clash-match-body">
+    <!-- HOME TEAM -->
+    <div class="clash-team-box home-box">
+      <div class="team-meta">
+        <div class="team-title-row">
+          <span class="team-accent-arrow">▶</span>
+          <span class="team-display-name">{{ upcoming_match.home }}</span>
+        </div>
+        <div class="team-quality-row">
+          <span class="team-stars">{{ upcoming_match.home_stars }}</span>
+          <span class="team-cltt"><b>{{ upcoming_match.home_cltt }}</b> CLTT</span>
+        </div>
+        <!-- 5 GẦN NHẤT: FORM BADGES -->
+        <div class="team-form-row" title="Phong độ 5 trận gần nhất">
+          {% for res in upcoming_match.home_form %}
+            <span class="form-pill form-{{ res }}">{{ res }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- JERSEY & CREST HOME -->
+      <div class="team-avatar-stack">
+        <div class="te-jersey jersey-home" title="Áo thi đấu sân nhà">
+          <span class="jersey-num">10</span>
+        </div>
+        <div class="te-crest-mini" title="Huy hiệu CLB">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER TROPHY & MATCH ENTRY ACTION -->
+    <div class="clash-center-box">
+      <div class="clash-trophy-badge">
+        <span class="trophy-ico">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="#fbbf24"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="trophy-comp">{{ upcoming_match.comp_label }}</span>
+      </div>
+
+      <div class="clash-action-wrap">
+        <a class="btn-clash-play" href="{{ url_for('competitions') }}">
+          XEM TRƯỚC TRẬN...
+        </a>
+      </div>
+    </div>
+
+    <!-- AWAY TEAM -->
+    <div class="clash-team-box away-box">
+      <!-- JERSEY & CREST AWAY -->
+      <div class="team-avatar-stack">
+        <div class="te-jersey jersey-away" title="Áo thi đấu sân khách">
+          <span class="jersey-num">9</span>
+        </div>
+        <div class="te-crest-mini" title="Huy hiệu CLB">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clip-rule="evenodd"/></svg>
+        </div>
+      </div>
+
+      <div class="team-meta away-meta">
+        <div class="team-title-row">
+          <span class="team-display-name">{{ upcoming_match.away }}</span>
+        </div>
+        <div class="team-quality-row">
+          <span class="team-stars">{{ upcoming_match.away_stars }}</span>
+          <span class="team-cltt"><b>{{ upcoming_match.away_cltt }}</b> CLTT</span>
+        </div>
+        <!-- 5 GẦN NHẤT: FORM BADGES -->
+        <div class="team-form-row" title="Phong độ 5 trận gần nhất">
+          {% for res in upcoming_match.away_form %}
+            <span class="form-pill form-{{ res }}">{{ res }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASH BOTTOM FOOTER: NHẬN CỐ VẤN & DIFFICULTY BAR -->
+  <div class="clash-footer-bar">
+    <button class="btn-clash-advisor" type="button" onclick="openAssistantModal()">
+      <span>NHẬN CỐ VẤN</span>
+      <span class="advisor-gift">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="#fbbf24"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0115 5h2a1 1 0 011 1v3a1 1 0 01-1 1h-1v7a2 2 0 01-2 2H6a2 2 0 01-2-2v-7H3a1 1 0 01-1-1V6a1 1 0 011-1h2zm4-1a1 1 0 00-1 1h2a1 1 0 00-1-1zm3 1a1 1 0 00-1-1 1 1 0 00-1 1h2zm-7 7v6h4v-6H5zm6 6v-6h4v6h-4z" clip-rule="evenodd"/></svg>
+      </span>
+    </button>
+
+    <div class="clash-difficulty-dock">
+      <div class="difficulty-indicator">
+        <span>{{ upcoming_match.difficulty }}</span>
+      </div>
+      <button class="difficulty-info-btn" type="button" title="Độ khó trận đấu được tính dựa trên CLTT của 2 đội và phong độ ra sân.">i</button>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- KHI MÙA GIẢI ĐÃ HOÀN TẤT HẾT LỊCH THI ĐẤU -->
+<div class="upcoming-clash-card clash-empty">
+  <div class="clash-empty-content">
+    <div style="font-size: 32px; margin-bottom: 8px;">⚽</div>
+    <div class="empty-clash-title">HÔM NAY NGHỈ THI ĐẤU</div>
+    <p class="muted">Tất cả các trận đấu chính thức trong ngày {{ club.season_day }} đã hoàn tất. Bạn có thể sang ngày mới hoặc đá giao hữu để duy trì thể lực.</p>
+    <div class="row" style="margin-top: 14px; gap: 10px; justify-content: center;">
+      <form method="post" action="{{ url_for('do_advance_day') }}" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button primary pulse" type="submit">⏭️ Sang ngày tiếp theo</button>
+      </form>
+      <a class="button secondary" href="{{ url_for('friendly') }}">🤝 Đá giao hữu</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ==========================================================================
+     PHẦN 4: DƯỚI NỮA LÀ BẢNG BÁO CÁO TRẬN ĐẤU GẦN NHẤT & CỘT BÊN PHẢI
+     ========================================================================== -->
+<div class="home-lower-grid">
+  <!-- BÊN TRÁI: BẢNG BÁO CÁO TRẬN ĐẤU GẦN NHẤT -->
+  <div class="lower-left-col">
+    <div class="match-report-card">
+      <div class="report-header-strip">
+        <span class="report-title-text">BÁO CÁO TRẬN ĐẤU GẦN NHẤT</span>
+        {% if last_match %}
+          <span class="badge {{ last_match.result_class }}">{{ last_match.result_label }}</span>
+        {% endif %}
+      </div>
+
+      {% if last_match %}
+        <!-- CÓ BÁO CÁO TRẬN VỪA ĐÁ -->
+        <div class="report-body-active">
+          <div class="report-comp-tag">🏆 {{ last_match.competition }} • Vòng {{ last_match.round }} (Ngày {{ last_match.day }})</div>
+
+          <div class="report-score-clash">
+            <div class="report-team home">
+              <span class="rteam-crest">⚽</span>
+              <span class="rteam-name">{{ last_match.home }}</span>
+            </div>
+
+            <div class="report-score-box">
+              <span class="rscore-val">{{ last_match.home_goals }} - {{ last_match.away_goals }}</span>
+              <span class="rscore-ft">FT (Full-time)</span>
+            </div>
+
+            <div class="report-team away">
+              <span class="rteam-crest">🛡️</span>
+              <span class="rteam-name">{{ last_match.away }}</span>
+            </div>
+          </div>
+
+          <div class="report-highlights-row">
+            <div class="highlight-item">
+              <span class="hl-icon">📊</span>
+              <span class="hl-txt">Kết quả: <b>{{ last_match.result_label }}</b></span>
+            </div>
+            <div class="highlight-item">
+              <span class="hl-icon">🏟️</span>
+              <span class="hl-txt">Địa điểm: <b>{% if last_match.is_user_home %}Sân Nhà{% else %}Sân Khách{% endif %}</b></span>
+            </div>
+          </div>
+
+          <div class="report-action-row">
+            <a class="button secondary small" href="{{ url_for('competitions') }}">Xem bảng xếp hạng & Lịch thi đấu →</a>
+          </div>
+        </div>
+      {% else %}
+        <!-- CHƯA CÓ BÁO CÁO TRẬN ĐẤU (GIỐNG TOP ELEVEN IMAGE 2) -->
+        <div class="report-empty-geometric">
+          <div class="empty-isometric-pattern"></div>
+          <div class="empty-report-message">
+            <p class="empty-msg-text">Chưa có báo cáo trận đấu. Hãy vào Lịch Thi Đấu để biết thêm thông tin.</p>
+            <div style="margin-top: 14px;">
+              <a class="btn-empty-schedule" href="{{ url_for('competitions') }}">
+                📅 VÀO LỊCH THI ĐẤU
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- TỔNG QUAN CHỈ SỐ ĐỘI HÌNH & CƠ SỞ VẬT CHẤT -->
+    <div class="card card-glow-cyan" style="margin-top: 18px;">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="icon">📊</span>
+          <span>CHỈ SỐ SỨC MẠNH & CƠ SỞ VẬT CHẤT</span>
+        </div>
+        <span class="ovr-shield ovr-gold" title="Rating trung bình đội hình">{{ "%.0f"|format(avg_rating) }}</span>
+      </div>
+
+      <div class="grid" style="gap: 12px; margin-top: 10px;">
+        <div class="col-4">
+          <div class="stat-mini-card">
+            <div class="muted">Rating Đội Hình</div>
+            <div class="stat-val gold">⭐ {{ "%.1f"|format(avg_rating) }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-mini-card">
+            <div class="muted">Sức Chứa Sân</div>
+            <div class="stat-val cyan">🏟️ {{ effects.capacity }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-mini-card">
+            <div class="muted">Tập Luyện</div>
+            <div class="stat-val green">⚡ x{{ "%.2f"|format(effects.train_gain_mult) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 14px; gap: 8px; flex-wrap: wrap;">
+        <span class="badge good">🛡️ Giảm chấn thương (trận): <b>x{{ "%.2f"|format(effects.match_injury_mult) }}</b></span>
+        <span class="badge cyan">💊 Hồi phục y tế: <b>x{{ "%.2f"|format(effects.injury_days_mult) }}</b></span>
+        <a class="badge gold" href="{{ url_for('facilities') }}">Nâng cấp công trình →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BÊN PHẢI: WIDGETS -->
+  <div class="lower-right-col">
+    <!-- WIDGET 1: BANNER NHIỆM VỤ ROSHN SAUDI -->
+    <div class="roshn-mission-card" onclick="openAssistantModal()" title="Bấm để xem nhiệm vụ và nhận quà">
+      <div class="roshn-header">
+        <span class="roshn-title">QUÀ HÀNG NGÀY</span>
+        <span class="roshn-arrow">↗</span>
+      </div>
+      <div class="roshn-body">
+        <div class="roshn-logo-box">
+          <span class="roshn-logo-icon">💠</span>
+        </div>
+        <div class="roshn-text">
+          <div class="roshn-sub">{{ 'ĐÃ NHẬN HÔM NAY' if manager_hub.daily_gift_claimed else 'QUÀ CHƯA NHẬN' }}</div>
+          <div class="roshn-cta">{{ 'XEM CHI TIẾT' if manager_hub.daily_gift_claimed else 'XEM QUÀ' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIDGET 2: CẦU THỦ CHẤT LƯỢNG ĐƯỢC PHÂN PHÁT HÀNG NGÀY CÓ THỂ MUA -->
+    <!-- Tự động xem vị trí yếu nhất đội hình để đề xuất cầu thủ tương ứng -->
+    <div class="daily-scout-card">
+      <div class="scout-card-header">
+        <div class="scout-header-left">
+          <span class="scout-tag-next">TIẾP</span>
+          <span class="scout-title">Cầu thủ hàng ngày</span>
+        </div>
+        <span class="scout-close-btn" title="Ưu đãi trong ngày">✕</span>
+      </div>
+
+      <div class="scout-card-body">
+        <div class="scout-left-info">
+          <div class="scout-pos-tag" title="Vị trí yếu nhất đội cần bổ sung: {{ daily_scout.position }}">
+            Vị trí yếu nhất: <b style="color:var(--accent-gold);">{{ daily_scout.position }}</b> (OVR {{ daily_scout.current_weakest_ovr }})
+          </div>
+          <div class="scout-player-name">{{ daily_scout.name }}</div>
+          <div class="scout-quality-stars">
+            <span>{{ daily_scout.stars }}</span>
+            <span class="scout-cltt-badge"><b>{{ daily_scout.rating }}</b> CLTT</span>
+          </div>
+          <div class="scout-age-label">{{ daily_scout.age }} tuổi • Sẵn sàng đá chính</div>
+
+          <div class="scout-timer-row">
+            <span class="timer-icon">⏱️</span>
+            <span class="timer-text">Còn lại hôm nay</span>
+          </div>
+        </div>
+
+        <div class="scout-right-jersey">
+          <div class="scout-jersey-img" title="Cầu thủ phân phát hàng ngày">
+            <span>👕</span>
+            <div class="scout-star-ring">⭐</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scout-card-action">
+        {% if daily_scout.is_bought %}
+          <button class="btn-scout-bought" type="button" disabled>
+            <span>✅ ĐÃ CHIÊU MỘ HÔM NAY</span>
+          </button>
+        {% else %}
+          <form method="post" action="{{ url_for('buy_daily_offer') }}" style="margin: 0; width: 100%;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-scout-buy pulse" type="submit" title="Chiêu mộ ngay vào đội hình">
+              <span>🛒 MUA NGAY: {{ fmt_money(daily_scout.price_cash) }}</span>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- WIDGET 3: MỤC QUẢN LÝ (TRỢ LÝ - QUÀ TẶNG HÀNG NGÀY & KÝ HỢP ĐỒNG) -->
+    <div class="assistant-widget-card" onclick="openAssistantModal()" title="Mở Báo cáo Trợ lý">
+      <div class="asw-badge-pill">
+        <span class="asw-count">{{ (not manager_hub.daily_gift_claimed)|int + (not manager_hub.tv_contract_signed)|int + (not manager_hub.sponsor_contract_signed)|int }}</span>
+        <span class="asw-text">Mục mới</span>
+      </div>
+
+      <div class="asw-action-row">
+        <button class="btn-asw-green" type="button">TRỢ LÝ</button>
+        <div class="asw-clipboard-icon">📋</div>
+      </div>
+    </div>
+
+    <!-- WIDGET 4: DƯỚI CÙNG BÊN PHẢI - XEM CÁC VỊ TRÍ Ở CÁC GIẢI ĐẤU MÌNH THAM GIA -->
+    <div class="competitions-widget-card">
+      <div class="cw-header">
+        <span class="cw-title">MÙA GIẢI NGÀY</span>
+        <span class="cw-day-badge">{{ club.season_day }}/{{ club.season_length }}</span>
+      </div>
+
+      <div class="cw-list">
+        {% for comp in comp_summary %}
+          <div class="cw-item">
+            <div class="cw-item-left">
+              <div class="cw-item-title">{{ comp.title }}</div>
+              <div class="cw-item-sub">{{ comp.subtitle }}</div>
+            </div>
+            <div class="cw-item-right">
+              <span class="cw-trophy trophy-{{ comp.trophy }}">🏆</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="cw-footer-link">
+        <a href="{{ url_for('competitions') }}">Xem chi tiết bảng đấu & kết quả ›</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function scrollEvents(direction) {
+    const wrap = document.getElementById('eventsScrollWrap');
+    if (wrap) {
+      wrap.scrollBy({ left: direction * 320, behavior: 'smooth' });
+    }
+  }
+</script>
 {% endblock %}

@@ -44,19 +44,19 @@
         <tbody>
           {% for p in players %}
             {% set pos_cls = "pos-gk" if p.position == "GK" else ("pos-def" if "D" in p.position else ("pos-mid" if "M" in p.position else "pos-fwd")) %}
-            <tr data-id="{{ p.id }}" 
-                data-name="{{ p.name }}" 
-                data-pos="{{ p.position }}" 
+            <tr data-id="{{ p.id }}"
+                data-name="{{ p.name }}"
+                data-pos="{{ p.position }}"
                 data-age="{{ p.age }}"
-                data-ovr="{{ p.overall }}" 
-                data-eff="{{ p.effective }}" 
-                data-cond="{{ p.condition }}" 
+                data-ovr="{{ p.overall }}"
+                data-eff="{{ p.effective }}"
+                data-cond="{{ p.condition }}"
                 data-mor="{{ p.morale }}"
-                data-form="{{ p.form }}" 
+                data-form="{{ p.form }}"
                 data-inj="{{ 1 if p.injured else 0 }}">
-              
+
               <td style="color: var(--text-dim); font-weight: 700;">#{{ p.id }}</td>
-              
+
               <td>
                 <a href="{{ url_for('player_detail', pid=p.id) }}" style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 16px;">👤</span>
@@ -65,7 +65,7 @@
               </td>
 
               <td><span class="badge-pos {{ pos_cls }}">{{ p.position }}</span></td>
-              
+
               <td>{{ p.age }}</td>
 
               <td>
@@ -113,6 +113,7 @@
 
               <td style="text-align: right;">
                 <form method="post" action="{{ url_for('sell_player', pid=p.id) }}" onsubmit="return confirm('Bán cầu thủ {{ p.name }} để lấy tiền mặt?');" style="margin: 0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="button danger" type="submit" style="padding: 5px 12px; font-size: 12.5px;">
                     Bán
                   </button>

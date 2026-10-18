@@ -1,226 +1,753 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- AUCTION ROOM LIVE HEADER -->
-  <div class="market-hud">
-    <div>
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-        <span class="ovr-shield ovr-gold" style="width:28px; height:28px; font-size:14px;">LIVE</span>
-        <h2 style="margin: 0; font-size: 24px; letter-spacing: 1px;">SÀN CHUYỂN NHƯỢNG ĐẤU GIÁ</h2>
-      </div>
-      <p class="muted" style="margin: 0;">
-        Danh sách <b>20 cầu thủ</b> mỗi đợt. Mỗi phiên kéo dài <b>3 phút</b>. Cầu thủ bạn đã trả giá sẽ được ghim lên đầu.
-      </p>
-    </div>
 
-    <!-- LIVE COUNTDOWN TIMER & CONTROLS -->
-    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-      <div class="countdown-clock">
-        <span class="muted" style="font-weight: 700; text-transform: uppercase;">Reset sau:</span>
-        <div class="countdown-box" id="countdownBox">
-          ⏱️ <span id="countdown">{{ seconds_left }}</span>s
-        </div>
-      </div>
+  <!-- =====================================================================
+       TRANSFER MARKET MAIN NAVIGATION TABS (3 TABS)
+       ===================================================================== -->
+  <div class="market-main-tabs-wrap">
+    <div class="market-tabs-bar">
+      <a class="market-tab-nav-btn {% if active_tab == 'auctions' %}active{% endif %}" href="{{ url_for('market', tab='auctions') }}">
+        <span class="m-tab-icon">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="#f97316"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.316.492-.533 1.035-.688 1.54a9.874 9.874 0 00-.382 1.9c-.33 2.1-.01 4.37.95 6.19a1 1 0 01-1.78.89 11.87 11.87 0 01-1.09-3.95 7.6 7.6 0 01.12-2.58c.07-.37.18-.73.32-1.07a1 1 0 00-1.77-.92C5.97 6.4 5.3 8.1 5.3 10c0 3.86 3.14 7 7 7s7-3.14 7-7c0-3.13-1.68-5.87-4.14-7.447z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="m-tab-text">ĐẤU GIÁ (15 CẦU THỦ)</span>
+        <span class="m-tab-badge">3 PHÚT</span>
+      </a>
 
-      <div class="row">
-        <label class="badge" style="display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 8px 14px;">
-          <input id="onlyWatched" type="checkbox" style="width: auto; transform: scale(1.2); cursor: pointer;">
-          <span>⭐ Chỉ hiện theo dõi</span>
-        </label>
-        <a class="button secondary" href="{{ url_for('market') }}" style="padding: 8px 14px; font-size: 14px;">
-          🔁 Tải lại
-        </a>
-      </div>
+      <a class="market-tab-nav-btn {% if active_tab == 'scout' %}active{% endif %}" href="{{ url_for('market', tab='scout') }}">
+        <span class="m-tab-icon">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="#fbbf24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+        </span>
+        <span class="m-tab-text">CHẤT LƯỢNG CAO</span>
+        <span class="m-tab-badge gold">RESET 2 NGÀY</span>
+      </a>
+
+      <a class="market-tab-nav-btn {% if active_tab == 'assistant' %}active{% endif %}" href="{{ url_for('market', tab='assistant') }}">
+        <span class="m-tab-icon">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="#38bdf8"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V9h2a1 1 0 100-2h-2V5z" clip-rule="evenodd"/></svg>
+        </span>
+        <span class="m-tab-text">TRỢ LÝ ĐỀ XUẤT</span>
+        <span class="m-tab-badge cyan">VỊ TRÍ YẾU NHẤT</span>
+      </a>
     </div>
   </div>
 
-  <!-- PINNED WATCHLIST HERO CARDS -->
-  {% if watchlist|length > 0 %}
-    <div class="card card-glow-gold" style="margin-bottom: 24px;">
-      <div class="card-header" style="border-bottom-color: rgba(255, 184, 0, 0.25);">
-        <div class="card-title" style="color: var(--accent-gold);">
-          <span class="icon">📌</span>
-          <span>MỤC TIÊU BẠN ĐANG THEO DÕI & TRẢ GIÁ ({{ watchlist|length }})</span>
+  <!-- =====================================================================
+       TAB 1: ĐẤU GIÁ (AUCTIONS - 15 CẦU THỦ NGẪU NHIÊN / 3 PHÚT)
+       ===================================================================== -->
+  {% if active_tab == 'auctions' %}
+    <div class="market-hud">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span class="ovr-shield ovr-gold" style="width:28px; height:28px; font-size:14px;">LIVE</span>
+          <h2 style="margin: 0; font-size: 24px; letter-spacing: 1px;">SÀN CHUYỂN NHƯỢNG ĐẤU GIÁ</h2>
         </div>
-        <span class="badge warn">Đang trong tầm ngắm</span>
+        <p class="muted" style="margin: 0;">
+          Danh sách <b>15 cầu thủ</b> ngẫu nhiên mỗi đợt. Mỗi phiên kéo dài đúng <b>3 phút</b>. Bấm vào bất kỳ cầu thủ nào để xem hồ sơ và đấu giá trực tiếp!
+        </p>
       </div>
 
-      <div class="grid" style="gap: 14px;">
-        {% for l in watchlist %}
-          {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
-          <div class="col-6">
-            <div class="playercard" style="border: 1px solid rgba(255, 184, 0, 0.4); background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); padding: 14px; margin-bottom: 0;">
-              <div class="top">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span class="badge-pos {{ pos_cls }}">{{ l.position }}</span>
-                  <div>
-                    <div class="name" style="font-size: 16px;">{{ l.name }}</div>
-                    <div class="sub">{{ l.age }} tuổi • Tiềm năng: ★{{ l.potential }}</div>
+      <!-- LIVE COUNTDOWN TIMER & CONTROLS -->
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div class="countdown-clock">
+          <span class="muted" style="font-weight: 700; text-transform: uppercase;">Reset sau:</span>
+          <div class="countdown-box" id="countdownBox">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+            <span id="countdown">{{ seconds_left }}</span>s
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="badge" style="display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 8px 14px;">
+            <input id="onlyWatched" type="checkbox" style="width: auto; transform: scale(1.2); cursor: pointer;">
+            <span>Chỉ hiện theo dõi</span>
+          </label>
+          <a class="button secondary" href="{{ url_for('market', tab='auctions') }}" style="padding: 8px 14px; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Tải lại
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- PINNED WATCHLIST HERO CARDS -->
+    {% if watchlist|length > 0 %}
+      <div class="card card-glow-gold" style="margin-bottom: 24px;">
+        <div class="card-header" style="border-bottom-color: rgba(255, 184, 0, 0.25);">
+          <div class="card-title" style="color: var(--accent-gold); display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+            <span>MỤC TIÊU BẠN ĐANG THEO DÕI & TRẢ GIÁ ({{ watchlist|length }})</span>
+          </div>
+          <span class="badge warn">Đang trong tầm ngắm</span>
+        </div>
+
+        <div class="grid" style="gap: 14px;">
+          {% for l in watchlist %}
+            {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
+            <div class="col-6">
+              <div class="playercard" style="border: 1px solid rgba(255, 184, 0, 0.4); background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); padding: 14px; margin-bottom: 0;">
+                <div class="top">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="badge-pos {{ pos_cls }}">{{ l.position }}</span>
+                    <div>
+                      <div class="name" style="font-size: 16px; cursor: pointer;" onclick="openModalFromData(this)" data-player='{{ l.json_data }}'>
+                        {{ l.flag }} {{ l.name }}
+                      </div>
+                      <div class="sub">{{ l.age }} tuổi • Kỹ năng: {{ l.special_skill }}</div>
+                    </div>
+                  </div>
+
+                  <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}">
+                    {{ "%.0f"|format(l.overall) }}
                   </div>
                 </div>
 
-                <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}">
-                  {{ "%.0f"|format(l.overall) }}
-                </div>
-              </div>
+                <!-- Price & Leader Banner -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border-subtle);">
+                  <div>
+                    <div class="muted" style="font-size: 11px; text-transform: uppercase;">Giá hiện tại:</div>
+                    <div style="font-family: var(--font-game); font-size: 20px; font-weight: 900; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
+                      {% if l.currency == "cash" %}
+                        {{ fmt_money(l.current_bid) }}
+                      {% else %}
+                        {{ l.current_bid }} Tokens
+                      {% endif %}
+                    </div>
+                  </div>
 
-              <!-- Price & Leader Banner -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border-subtle);">
-                <div>
-                  <div class="muted" style="font-size: 11px; text-transform: uppercase;">Giá hiện tại:</div>
-                  <div style="font-family: var(--font-game); font-size: 20px; font-weight: 900; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
-                    {% if l.currency == "cash" %}
-                      💵 {{ fmt_money(l.current_bid) }}
+                  <div>
+                    {% if l.highest_bidder == "you" %}
+                      <span class="badge good" style="font-size: 13px; font-weight: 800; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 20 20" width="14" height="14" fill="#facc15"><path fill-rule="evenodd" d="M10 2l2.5 5 5.5.8-4 3.9.9 5.3-4.9-2.6-4.9 2.6.9-5.3-4-3.9 5.5-.8L10 2z" clip-rule="evenodd"/></svg>
+                        BẠN ĐANG DẪN
+                      </span>
+                    {% elif l.highest_bidder == "ai" %}
+                      <span class="badge warn" style="font-size: 13px; font-weight: 800; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 20 20" width="14" height="14" fill="#fbbf24"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        BỊ AI VƯỢT
+                      </span>
                     {% else %}
-                      🪙 {{ l.current_bid }} Tokens
+                      <span class="badge muted">Chưa có ai</span>
                     {% endif %}
                   </div>
                 </div>
 
-                <div>
-                  {% if l.highest_bidder == "you" %}
-                    <span class="badge good" style="font-size: 13px; font-weight: 800; padding: 5px 10px;">👑 BẠN ĐANG DẪN</span>
-                  {% elif l.highest_bidder == "ai" %}
-                    <span class="badge warn" style="font-size: 13px; font-weight: 800; padding: 5px 10px;">⚠️ BỊ AI VƯỢT</span>
-                  {% else %}
-                    <span class="badge muted">Chưa có ai</span>
-                  {% endif %}
+                <!-- Bid Action Form & Detail Modal Trigger -->
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                  <button type="button" class="button secondary" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;" onclick="openModalFromData(this)" data-player='{{ l.json_data }}'>
+                    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+                    Xem hồ sơ
+                  </button>
+                  <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0; flex: 1.5;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% if l.currency == "cash" %}
+                      <button class="button success" type="submit" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                        Trả giá +{{ fmt_money(l.bid_step) }}
+                      </button>
+                    {% else %}
+                      <button class="button gold" type="submit" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                        Trả giá +1 Token
+                      </button>
+                    {% endif %}
+                  </form>
                 </div>
               </div>
-
-              <!-- Bid Action Form -->
-              <div style="margin-top: 12px; text-align: right;">
-                <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0;">
-                  {% if l.currency == "cash" %}
-                    <button class="button success" type="submit" style="width: 100%;">
-                      ⚡ Trả giá thêm +{{ fmt_money(l.bid_step) }}
-                    </button>
-                  {% else %}
-                    <button class="button gold" type="submit" style="width: 100%;">
-                      ⚡ Trả giá thêm +1 🪙
-                    </button>
-                  {% endif %}
-                </form>
-              </div>
             </div>
-          </div>
-        {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- ALL AUCTION LISTINGS TABLE (15 PLAYERS) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+          <span>DANH SÁCH 15 CẦU THỦ ĐẤU GIÁ HIỆN TẠI</span>
+        </div>
+        <span class="muted" style="font-size: 12.5px;">Bấm vào tên cầu thủ để mở phòng đấu giá chi tiết</span>
+      </div>
+
+      <div class="table-wrap">
+        <table id="marketTable">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="name">Cầu thủ <span class="muted" id="si_name"></span></th>
+              <th class="sortable" data-key="pos">Vị trí <span class="muted" id="si_pos"></span></th>
+              <th class="sortable" data-key="age">Tuổi <span class="muted" id="si_age"></span></th>
+              <th class="sortable" data-key="ovr">CLTT <span class="muted" id="si_ovr"></span></th>
+              <th class="sortable" data-key="cur">Tiền tệ <span class="muted" id="si_cur"></span></th>
+              <th class="sortable" data-key="bid">Giá hiện tại <span class="muted" id="si_bid"></span></th>
+              <th class="sortable" data-key="lead">Đang dẫn <span class="muted" id="si_lead"></span></th>
+              <th style="text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in listings %}
+              {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
+              <tr class="{% if l.user_has_bid %}watched{% endif %}"
+                  data-watched="{{ 1 if l.user_has_bid else 0 }}"
+                  data-name="{{ l.name }}"
+                  data-pos="{{ l.position }}"
+                  data-age="{{ l.age }}"
+                  data-ovr="{{ l.overall }}"
+                  data-cur="{{ 1 if l.currency=='token' else 0 }}"
+                  data-bid="{{ l.current_bid }}"
+                  data-lead="{% if l.highest_bidder=='you' %}2{% elif l.highest_bidder=='ai' %}1{% else %}0{% endif %}">
+
+                <td>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">{{ l.flag }}</span>
+                    <div>
+                      <div style="font-weight: 800; color: #fff; font-size: 14px; cursor: pointer; text-decoration: underline;"
+                           onclick="openModalFromData(this)" data-player='{{ l.json_data }}'>
+                        {{ l.name }}
+                      </div>
+                      <div class="muted" style="font-size: 11px;">
+                        {{ l.height }}cm • {{ l.preferred_foot }}
+                        {% if l.user_has_bid %}
+                          <span class="badge warn" style="font-size: 9px; padding: 1px 5px; margin-left: 4px;">Đang theo dõi</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge-pos {{ pos_cls }}">{{ l.position }}</span></td>
+                <td>{{ l.age }}</td>
+                <td>
+                  <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}" style="width: 28px; height: 28px; font-size: 14px;">
+                    {{ "%.0f"|format(l.overall) }}
+                  </div>
+                </td>
+                <td>
+                  {% if l.currency == "cash" %}
+                    <span class="badge good">💵 Tiền mặt</span>
+                  {% else %}
+                    <span class="badge warn">🪙 Token</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <b style="font-family: var(--font-game); font-size: 16px; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
+                    {% if l.currency == "cash" %}
+                      {{ fmt_money(l.current_bid) }}
+                    {% else %}
+                      {{ l.current_bid }} Tokens
+                    {% endif %}
+                  </b>
+                </td>
+                <td>
+                  {% if l.highest_bidder == "you" %}
+                    <span class="badge good">👑 Bạn</span>
+                  {% elif l.highest_bidder == "ai" %}
+                    <span class="badge warn">AI</span>
+                  {% else %}
+                    <span class="badge muted">Chưa có</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: inline-flex; gap: 6px; align-items: center;">
+                    <button type="button" class="button secondary" style="padding: 6px 10px; font-size: 12.5px;" onclick="openModalFromData(this)" data-player='{{ l.json_data }}'>
+                      👁️ Chi tiết
+                    </button>
+                    <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0; display: inline-block;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      {% if l.currency == "cash" %}
+                        <button class="button success" type="submit" style="padding: 6px 12px; font-size: 12.5px;">
+                          +{{ fmt_money(l.bid_step) }}
+                        </button>
+                      {% else %}
+                        <button class="button gold" type="submit" style="padding: 6px 12px; font-size: 12.5px;">
+                          +1 🪙
+                        </button>
+                      {% endif %}
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   {% endif %}
 
-  <!-- ALL MARKET LISTINGS TABLE -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">
-        <span class="icon">📋</span>
-        <span>DANH SÁCH TẤT CẢ CẦU THỦ THỊ TRƯỜNG</span>
+  <!-- =====================================================================
+       TAB 2: CẦU THỦ CHẤT LƯỢNG CAO (SCOUT - SIÊU SAO RESET SAU 2 NGÀY)
+       ===================================================================== -->
+  {% if active_tab == 'scout' %}
+    <div class="market-hud" style="border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+          <span class="ovr-shield ovr-gold" style="width:30px; height:30px; font-size:15px;">TOP</span>
+          <h2 style="margin: 0; font-size: 24px; color: #fbbf24; letter-spacing: 1px;">CHUYÊN GIA TUYỂN TRẠCH: CẦU THỦ CHẤT LƯỢNG CAO</h2>
+        </div>
+        <p class="muted" style="margin: 0; max-width: 720px;">
+          Danh sách các siêu sao đẳng cấp thế giới với <b>CLTT được tạo theo cấp CLB</b>, kỹ năng độc quyền và đẳng cấp vượt trội.
+          Giá trị cao, có thể ký hợp đồng ngay. Danh sách được làm mới sau <b>mỗi 2 ngày (48 giờ)</b>.
+        </p>
       </div>
-      <span class="muted" style="font-size: 12.5px;">Bấm vào tiêu đề cột để sắp xếp</span>
+
+      <!-- 2 DAYS COUNTDOWN BOX -->
+      <div class="scout-countdown-box">
+        <span class="muted" style="font-size: 12px; text-transform: uppercase; font-weight: 700;">Làm mới sau:</span>
+        <div class="scout-timer-pill" id="scoutTimer">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+          <span id="scoutCountdown">{{ (scout_seconds_left // 86400) }} ngày {{ (scout_seconds_left % 86400 // 3600) }} giờ {{ (scout_seconds_left % 3600 // 60) }} phút</span>
+        </div>
+      </div>
     </div>
 
-    <div class="table-wrap">
-      <table id="marketTable">
-        <thead>
-          <tr>
-            <th class="sortable" data-key="name">Cầu thủ <span class="muted" id="si_name"></span></th>
-            <th class="sortable" data-key="pos">Vị trí <span class="muted" id="si_pos"></span></th>
-            <th class="sortable" data-key="age">Tuổi <span class="muted" id="si_age"></span></th>
-            <th class="sortable" data-key="ovr">OVR <span class="muted" id="si_ovr"></span></th>
-            <th class="sortable" data-key="pot">Tiềm năng <span class="muted" id="si_pot"></span></th>
-            <th class="sortable" data-key="cur">Tiền tệ <span class="muted" id="si_cur"></span></th>
-            <th class="sortable" data-key="bid">Giá hiện tại <span class="muted" id="si_bid"></span></th>
-            <th class="sortable" data-key="lead">Đang dẫn <span class="muted" id="si_lead"></span></th>
-            <th style="text-align: right;">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for l in listings %}
-            {% set pos_cls = "pos-gk" if l.position == "GK" else ("pos-def" if "D" in l.position else ("pos-mid" if "M" in l.position else "pos-fwd")) %}
-            <tr class="{% if l.user_has_bid %}watched{% endif %}" 
-                data-watched="{{ 1 if l.user_has_bid else 0 }}"
-                data-name="{{ l.name }}" 
-                data-pos="{{ l.position }}" 
-                data-age="{{ l.age }}" 
-                data-ovr="{{ l.overall }}"
-                data-pot="{{ l.potential }}" 
-                data-cur="{{ 1 if l.currency=='token' else 0 }}"
-                data-bid="{{ l.current_bid }}" 
-                data-lead="{% if l.highest_bidder=='you' %}2{% elif l.highest_bidder=='ai' %}1{% else %}0{% endif %}">
-              
-              <td>
-                <div style="font-weight: 800; color: #fff; font-size: 14px;">{{ l.name }}</div>
-                {% if l.user_has_bid %}
-                  <span class="badge warn" style="font-size: 10px; padding: 1px 6px;">Đang theo dõi</span>
-                {% endif %}
-              </td>
-              <td><span class="badge-pos {{ pos_cls }}">{{ l.position }}</span></td>
-              <td>{{ l.age }}</td>
-              <td>
-                <div class="ovr-shield {% if l.overall >= 75 %}ovr-gold{% elif l.overall >= 65 %}ovr-silver{% else %}ovr-bronze{% endif %}" style="width: 28px; height: 28px; font-size: 14px;">
-                  {{ "%.0f"|format(l.overall) }}
+    <!-- SCOUT PLAYERS GRID (8 SUPERSTARS) -->
+    <div class="grid" style="gap: 18px;">
+      {% for s in scout_listings %}
+        {% set pos_cls = "pos-gk" if s.position == "GK" else ("pos-def" if "D" in s.position else ("pos-mid" if "M" in s.position else "pos-fwd")) %}
+        <div class="col-6">
+          <div class="scout-card card-glow-gold">
+            <div class="scout-card-top">
+              <div class="scout-avatar-side">
+                <div class="scout-bust">
+                  <div class="pm-jersey-body" style="width: 48px; height: 58px;">
+                    <div class="pm-jersey-stripes"></div>
+                    <div class="pm-jersey-num" style="font-size: 15px;">{{ loop.index + 6 }}</div>
+                  </div>
+                  <span class="scout-nat-flag">{{ s.flag }}</span>
                 </div>
-              </td>
-              <td><span class="badge cyan">★ {{ l.potential }}</span></td>
-              <td>
-                {% if l.currency == "cash" %}
-                  <span class="badge good">💵 Tiền mặt</span>
-                {% else %}
-                  <span class="badge warn">🪙 Token</span>
-                {% endif %}
-              </td>
-              <td>
-                <b style="font-family: var(--font-game); font-size: 16px; color: {% if l.currency=='cash' %}var(--accent-green){% else %}var(--accent-gold){% endif %};">
-                  {% if l.currency == "cash" %}
-                    {{ fmt_money(l.current_bid) }}
-                  {% else %}
-                    {{ l.current_bid }}
+              </div>
+
+              <div class="scout-info-side">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <span class="badge-pos {{ pos_cls }}" style="font-size: 12px; padding: 2px 8px;">{{ s.position }}</span>
+                    <h3 class="scout-name" onclick="openModalFromData(this)" data-player='{{ s.json_data }}'>
+                      {{ s.name }}
+                    </h3>
+                    <div class="scout-sub">{{ s.age }} tuổi • {{ s.height }} cm • {{ s.preferred_foot }}</div>
+                  </div>
+
+                  <div class="ovr-shield ovr-gold" style="width: 52px; height: 52px; font-size: 24px; border-radius: 12px;">
+                    {{ "%.0f"|format(s.overall) }}
+                  </div>
+                </div>
+
+                <div class="scout-traits-row">
+                  <span class="badge gold" style="font-size: 13px;">{{ s.stars_str }}</span>
+                  {% if s.special_skill != 'Không có' %}
+                    <span class="badge cyan" style="font-size: 12px;">{{ s.special_skill }}</span>
                   {% endif %}
-                </b>
-              </td>
-              <td>
-                {% if l.highest_bidder == "you" %}
-                  <span class="badge good">👑 Bạn</span>
-                {% elif l.highest_bidder == "ai" %}
-                  <span class="badge warn">AI</span>
-                {% else %}
-                  <span class="badge muted">Chưa có</span>
-                {% endif %}
-              </td>
-              <td style="text-align: right;">
-                <form method="post" action="{{ url_for('bid', lid=l.id) }}" style="margin: 0;">
-                  {% if l.currency == "cash" %}
-                    <button class="button" type="submit" style="padding: 6px 12px; font-size: 13px;">
-                      +{{ fmt_money(l.bid_step) }}
-                    </button>
+                  <span class="badge warn" style="font-size: 11px;">Tuyển trạch nâng cao</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Price & Buy actions -->
+            <div class="scout-card-bottom">
+              <div>
+                <span class="muted" style="font-size: 11px; text-transform: uppercase;">Giá chuyển nhượng:</span>
+                <div class="scout-price-tag">
+                  {% if s.currency == 'cash' %}
+                    {{ fmt_money(s.price_cash) }}
                   {% else %}
-                    <button class="button gold" type="submit" style="padding: 6px 12px; font-size: 13px;">
-                      +1 🪙
-                    </button>
+                    {{ s.price_tokens }} Tokens
                   {% endif %}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="button secondary" style="padding: 8px 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="openModalFromData(this)" data-player='{{ s.json_data }}'>
+                  <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+                  Chi tiết
+                </button>
+                <form method="post" action="{{ url_for('buy_scout', sid=s.id) }}" style="margin: 0;" onsubmit="return confirm('Ký hợp đồng ngay với {{ s.name }}?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button success" style="padding: 8px 16px; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                    KÝ HỢP ĐỒNG
+                  </button>
                 </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- =====================================================================
+       TAB 3: TRỢ LÝ ĐỀ XUẤT (WEAKEST POSITION ASSISTANT SCOUT)
+       ===================================================================== -->
+  {% if active_tab == 'assistant' %}
+    <div class="assistant-hero-banner">
+      <div class="assistant-coach-avatar">
+        <span style="font-size: 44px;">📋</span>
+      </div>
+
+      <div class="assistant-content">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div class="assistant-tag">🚨 BÁO CÁO PHÂN TÍCH ĐIỂM YẾU ĐỘI HÌNH</div>
+            <h2 style="margin: 4px 0 6px 0; font-size: 22px; color: #fff;">
+              Vị trí yếu nhất hiện tại: <span style="color: #f59e0b;">{{ weakest_info.pos }}</span> (Cầu thủ: <b style="color: #38bdf8;">{{ weakest_info.name }}</b> - CLTT: <b>{{ weakest_info.ovr }}</b>)
+            </h2>
+          </div>
+
+          <form method="post" action="{{ url_for('refresh_assistant') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="button secondary" style="font-size: 13px;">
+              🔄 Làm mới đề xuất
+            </button>
+          </form>
+        </div>
+
+        <p class="muted" style="margin: 0; font-size: 13.5px; line-height: 1.5;">
+          Trợ lý HLV nhận định: Vị trí <b>{{ weakest_info.pos }}</b> đang là mắt xích yếu nhất trong sơ đồ chiến thuật của bạn và thường xuyên bị đối thủ khai thác.
+          Dưới đây là <b>3 phương án bổ sung nhân sự vượt trội</b> được hệ thống thiết kế riêng cho CLB theo <b>3 mức giá tăng dần</b> từ vừa túi tiền đến đẳng cấp thế giới.
+        </p>
+      </div>
+    </div>
+
+    <!-- 3 TIERED UPGRADE OPTIONS (ASCENDING PRICE & QUALITY) -->
+    <div class="grid" style="gap: 20px;">
+      {% for a in assistant_options %}
+        {% set tier_name = "TÙY CHỌN 1: TIỀM NĂNG (TIẾT KIỆM)" if a.tier == 1 else ("TÙY CHỌN 2: TRỤ CỘT (NÂNG CAO)" if a.tier == 2 else "TÙY CHỌN 3: ĐẲNG CẤP THẾ GIỚI (SIÊU SAO)") %}
+        {% set tier_color = "var(--accent-blue)" if a.tier == 1 else ("var(--accent-gold)" if a.tier == 2 else "var(--accent-green)") %}
+        {% set diff_ovr = (a.overall - weakest_info.ovr)|round(1) %}
+
+        <div class="col-4">
+          <div class="assistant-tier-card {% if a.tier == 3 %}card-glow-gold{% endif %}">
+            <div class="atc-header" style="border-bottom: 2px solid {{ tier_color }};">
+              <span class="atc-tier-title" style="color: {{ tier_color }};">{{ tier_name }}</span>
+              <span class="badge good" style="font-size: 11px;">+{{ diff_ovr }} CLTT</span>
+            </div>
+
+            <div class="atc-body">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 28px;">{{ a.flag }}</span>
+                  <div>
+                    <h3 class="atc-player-name" onclick="openModalFromData(this)" data-player='{{ a.json_data }}'>
+                      {{ a.name }}
+                    </h3>
+                    <div class="muted" style="font-size: 12px;">Vị trí: <b>{{ a.position }}</b> • {{ a.age }} tuổi</div>
+                  </div>
+                </div>
+
+                <div class="ovr-shield {% if a.overall >= 90 %}ovr-gold{% elif a.overall >= 80 %}ovr-silver{% else %}ovr-bronze{% endif %}" style="width: 46px; height: 46px; font-size: 20px;">
+                  {{ "%.0f"|format(a.overall) }}
+                </div>
+              </div>
+
+              <div class="atc-specs-list">
+                <div class="atc-spec-row">
+                  <span class="muted">Xếp hạng sao:</span>
+                  <span style="color: #f59e0b; font-weight: 700;">{{ a.stars_str }}</span>
+                </div>
+                <div class="atc-spec-row">
+                  <span class="muted">Thể hình & Chân:</span>
+                  <span>{{ a.height }}cm • {{ a.preferred_foot }}</span>
+                </div>
+                <div class="atc-spec-row">
+                  <span class="muted">Kỹ năng đặc biệt:</span>
+                  <span style="color: #38bdf8; font-weight: 700;">{{ a.special_skill }}</span>
+                </div>
+                <div class="atc-spec-row">
+                  <span class="muted">Tấn công / Phòng thủ:</span>
+                  <span>⚔️ {{ a.atk_avg }} / 🛡️ {{ a.def_avg }}</span>
+                </div>
+              </div>
+
+              <!-- Price & Sign -->
+              <div class="atc-price-box">
+                <span class="muted" style="font-size: 11px; text-transform: uppercase;">Mức phí đề xuất:</span>
+                <div class="atc-price-val">
+                  {% if a.currency == 'cash' %}
+                    💵 {{ fmt_money(a.price_cash) }}
+                  {% else %}
+                    🪙 {{ a.price_tokens }} Tokens
+                  {% endif %}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-top: 14px;">
+                <button type="button" class="button secondary" style="flex: 1; padding: 10px;" onclick="openModalFromData(this)" data-player='{{ a.json_data }}'>
+                  👁️ Xem hồ sơ
+                </button>
+                <form method="post" action="{{ url_for('buy_assistant', aid=a.id) }}" style="flex: 1.5; margin: 0;" onsubmit="return confirm('Ký hợp đồng nâng cấp vị trí {{ a.position }} với {{ a.name }}?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button success" style="width: 100%; padding: 10px; font-weight: 800;">
+                    ⚡ KÝ HỢP ĐỒNG
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- =====================================================================
+       PLAYER DETAIL DOSSIER MODAL (MATCHING SCREENSHOTS 1, 2, 3, 4, 5)
+       ===================================================================== -->
+  <div id="playerDetailModal" class="player-modal-backdrop" style="display: none;">
+    <div class="player-modal-dialog">
+
+      <!-- MODAL HEADER (Screenshots 1-5) -->
+      <div class="pm-header">
+        <div class="pm-avatar-wrap">
+          <div class="pm-avatar-bust" id="pmAvatarBust">
+            <div class="pm-player-head"></div>
+            <div class="pm-jersey-body" id="pmJerseyGraphic">
+              <div class="pm-jersey-stripes"></div>
+              <div class="pm-jersey-num" id="pmJerseyNum">10</div>
+            </div>
+          </div>
+          <div class="pm-flag-badge" id="pmFlag">🇧🇷</div>
+        </div>
+
+        <div class="pm-header-info">
+          <!-- Top row: Swap kit & close buttons -->
+          <div class="pm-top-actions">
+            <button type="button" class="pm-action-btn" id="pmJerseySwapBtn" title="Đổi giao diện màu áo">
+              👕:👕
+            </button>
+            <button type="button" class="pm-close-btn" id="pmCloseBtn" title="Đóng cửa sổ">
+              ✕
+            </button>
+          </div>
+
+          <!-- Player Name -->
+          <div class="pm-title-row">
+            <h2 class="pm-player-name" id="pmName">Adriano Nogueira de Sousa</h2>
+          </div>
+
+          <!-- CLTT Rating & Stars -->
+          <div class="pm-cltt-row">
+            <span class="pm-cltt-label">CLTT</span>
+            <span class="pm-cltt-score" id="pmOvr">72</span>
+            <span class="pm-stars" id="pmStars">★★★★☆</span>
+            <span class="pm-info-icon" title="Chất Lượng Tổng Thể">ℹ</span>
+          </div>
+
+          <!-- Meta badges row: Age, Pos, Skill -->
+          <div class="pm-meta-row">
+            <div class="pm-meta-item">
+              <span>Tuổi:</span>
+              <b id="pmAge">22</b>
+            </div>
+            <div class="pm-meta-item">
+              <span>Vị trí:</span>
+              <span class="pm-pos-badge" id="pmPos">ML</span>
+            </div>
+            <div class="pm-meta-item">
+              <span>Kỹ năng:</span>
+              <span class="pm-skill-val" id="pmSkill">💫</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL BODY: LEFT SIDEBAR TABS + RIGHT CONTENT -->
+      <div class="pm-body">
+        <!-- LEFT VERTICAL TABS -->
+        <div class="pm-sidebar">
+          <button type="button" class="pm-tab-btn active" data-tab="overview">Tổng quan</button>
+          <button type="button" class="pm-tab-btn" data-tab="skills">Kỹ năng</button>
+          <button type="button" class="pm-tab-btn" data-tab="style">Lối chơi</button>
+          <button type="button" class="pm-tab-btn" data-tab="stats">Chỉ số</button>
+          <button type="button" class="pm-tab-btn" data-tab="bids" id="pmTabBidsBtn">Đề nghị</button>
+        </div>
+
+        <!-- RIGHT CONTENT PANELS -->
+        <div class="pm-content">
+          <!-- TAB 1: TỔNG QUAN (Screenshot 1) -->
+          <div class="pm-tab-panel active" id="pmp-overview">
+            <div class="pm-overview-grid">
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Nặng:</span>
+                <span class="pm-ov-val" id="pmWeight">83 kg</span>
+              </div>
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Cao:</span>
+                <span class="pm-ov-val" id="pmHeight">185 cm</span>
+              </div>
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Chân thuận:</span>
+                <span class="pm-ov-val" id="pmFoot">🦶 Chân phải</span>
+              </div>
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Giá trị thị trường:</span>
+                <span class="pm-ov-val pm-cash" id="pmValue">💵 14.3M</span>
+              </div>
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Lương mỗi tuần:</span>
+                <span class="pm-ov-val pm-cash" id="pmWage">💵 105K</span>
+              </div>
+              <div class="pm-ov-box">
+                <span class="pm-ov-label">Mẫu:</span>
+                <span class="pm-ov-val" id="pmFormPattern">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: BỘ CHỈ SỐ KỸ NĂNG (Screenshot 2: Core highlighted, non-core dimmed) -->
+          <div class="pm-tab-panel" id="pmp-skills">
+            <div class="pm-skills-grid">
+              <!-- 1. PHÒNG THỦ -->
+              <div class="pm-skill-col">
+                <div class="pm-col-head def">
+                  <span class="pm-col-icon">🛡️</span>
+                  <span class="pm-col-title">PHÒNG THỦ</span>
+                  <span class="pm-col-avg" id="pmDefAvg">66</span>
+                </div>
+                <div class="pm-attr-list" id="pmDefList">
+                  <!-- Dynamically rendered -->
+                </div>
+              </div>
+
+              <!-- 2. TẤN CÔNG -->
+              <div class="pm-skill-col">
+                <div class="pm-col-head atk">
+                  <span class="pm-col-icon">⚡</span>
+                  <span class="pm-col-title">TẤN CÔNG</span>
+                  <span class="pm-col-avg" id="pmAtkAvg">76</span>
+                </div>
+                <div class="pm-attr-list" id="pmAtkList">
+                  <!-- Dynamically rendered -->
+                </div>
+              </div>
+
+              <!-- 3. THỂ CHẤT -->
+              <div class="pm-skill-col">
+                <div class="pm-col-head phy">
+                  <span class="pm-col-icon">⚥</span>
+                  <span class="pm-col-title">THỂ CHẤT</span>
+                  <span class="pm-col-avg" id="pmPhyAvg">73</span>
+                </div>
+                <div class="pm-attr-list" id="pmPhyList">
+                  <!-- Dynamically rendered -->
+                </div>
+              </div>
+            </div>
+
+            <div class="pm-skills-footer">
+              Thuộc tính chính cho cầu thủ này được đánh dấu nổi bật. Hãy tập luyện hoặc tăng bậc để tăng thêm nữa.
+            </div>
+          </div>
+
+          <!-- TAB LỐI CHƠI (Tactical Role & Traits) -->
+          <div class="pm-tab-panel" id="pmp-style">
+            <div class="pm-style-wrap">
+              <div class="pm-role-banner">
+                <div class="pm-role-badge" id="pmRoleName">Playmaker (Nhạc trưởng cánh)</div>
+                <p class="pm-role-desc" id="pmRoleDesc">
+                  Cầu thủ có khả năng cầm nhịp, phân phối bóng và tạt bóng chính xác vào vòng cấm. Thích hợp tổ chức tấn công từ hai hành lang biên.
+                </p>
+              </div>
+              <div class="pm-traits-box">
+                <div class="pm-tb-title">KỸ NĂNG ĐẶC BIỆT & THIÊN PHÚ (TRAITS)</div>
+                <div class="pm-traits-list" id="pmTraitsList">
+                  <span class="badge warn">⭐ Tốc độ</span>
+                  <span class="badge warn">⭐ Nhạc trưởng</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: CHỈ SỐ (Thống kê sự nghiệp & mùa giải - Screenshot 3) -->
+          <div class="pm-tab-panel" id="pmp-stats">
+            <div class="pm-stats-table-wrap">
+              <table class="pm-stats-table">
+                <thead>
+                  <tr>
+                    <th style="width: 33%;">C.NGHIỆP 📑(1)</th>
+                    <th style="width: 34%;">GIẢI CHUYÊN NGHIỆP T</th>
+                    <th style="width: 33%;">CUP</th>
+                  </tr>
+                </thead>
+                <tbody id="pmStatsTableBody">
+                  <!-- Dynamically rendered with Screenshot 3 rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 4: ĐỀ NGHỊ (Chỉ ở đấu giá mới có - Screenshots 4 & 5) -->
+          <div class="pm-tab-panel" id="pmp-bids">
+            <div class="pm-bids-layout">
+              <!-- LEFT COLUMN: Bid history / bidders -->
+              <div class="pm-bids-left">
+                <div class="pm-bids-header" id="pmBidsHeader">Người đấu giá: 0</div>
+                <div class="pm-bids-list" id="pmBidsList">
+                  <!-- Empty state or list of bids -->
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN: Green LED Countdown, Next bid, Green ĐẤU GIÁ button -->
+              <div class="pm-bids-right">
+                <div class="pm-digital-clock-box">
+                  <div class="pm-digital-clock" id="pmModalClock">01:11</div>
+                </div>
+
+                <div class="pm-dotted-divider"></div>
+
+                <div class="pm-next-bid-box">
+                  <span class="pm-nb-label">Đề xuất tiếp theo</span>
+                  <span class="pm-nb-val" id="pmNextBid">Ⓣ 1 💵 14.3M</span>
+                </div>
+
+                <div class="pm-user-balance-box">
+                  <span>Đang có <b id="pmUserTokens">🪙 {{ club.tokens }}</b> <i class="pm-info-icon" title="Số dư token">ℹ</i></span>
+                  <span style="font-size: 11.5px; color: #10b981;" id="pmUserCash">💵 {{ fmt_money(club.cash) }}</span>
+                </div>
+
+                <form id="pmBidForm" method="post" action="">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="pm-bid-btn-large">
+                    ĐẤU GIÁ
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC (COUNTDOWN & SORTING) -->
+  <!-- SCRIPT LOGIC (COUNTDOWN, TABLE SORTING & MODAL INTERACTION) -->
   <script>
+    // 1. Live Countdown for 3m Auction
     (function(){
       let left = {{ seconds_left|int }};
       const el = document.getElementById("countdown");
       const box = document.getElementById("countdownBox");
+      const modalClock = document.getElementById("pmModalClock");
+
+      function formatTime(s){
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+      }
+
       function tick(){
-        if(!el) return;
-        el.textContent = left;
+        if(el) el.textContent = left;
+        if(modalClock){
+          if(left <= 5){
+            modalClock.textContent = "HÃY ĐỢI...";
+          } else {
+            modalClock.textContent = formatTime(left);
+          }
+        }
         if(box && left <= 30){
           box.classList.add("urgent");
         }
         left -= 1;
         if(left < 0) {
-          window.location.reload();
+          {% if active_tab == 'auctions' %}
+            window.location.reload();
+          {% endif %}
         } else {
           setTimeout(tick, 1000);
         }
@@ -228,16 +755,17 @@
       tick();
     })();
 
+    // 2. Table Sorting & Filter for Auctions
     (function(){
       const table = document.getElementById('marketTable');
       if(!table) return;
       const tbody = table.querySelector('tbody');
       const headers = table.querySelectorAll('th.sortable');
-      let sortKey = null;
-      let sortDir = 1;
+      let sortKey = 'bid';
+      let sortDir = -1;
 
       function setIndicator(key){
-        const ids = ['name','pos','age','ovr','pot','cur','bid','lead'];
+        const ids = ['name','pos','age','ovr','cur','bid','lead'];
         for(const k of ids){
           const el = document.getElementById('si_'+k);
           if(!el) continue;
@@ -285,13 +813,9 @@
         });
       });
 
-      // Default initial key: highest bid
-      sortKey = 'bid';
-      sortDir = -1;
       setIndicator('bid');
       sortRows();
 
-      // Filter watched
       const onlyWatched = document.getElementById('onlyWatched');
       if(onlyWatched){
         onlyWatched.addEventListener('change', ()=>{
@@ -304,5 +828,246 @@
         });
       }
     })();
+
+    // 3. Player Detail Modal Logic (Matching Screenshots 1, 2, 3, 4, 5)
+    let currentModalPlayer = null;
+    let jerseyTheme = 0;
+    const jerseyThemes = [
+      { body: 'linear-gradient(135deg, #0284c7, #0369a1)', stripe: 'rgba(255,255,255,0.2)' },
+      { body: 'linear-gradient(135deg, #10b981, #059669)', stripe: 'rgba(0,0,0,0.2)' },
+      { body: 'linear-gradient(135deg, #f59e0b, #d97706)', stripe: 'rgba(255,255,255,0.25)' },
+      { body: 'linear-gradient(135deg, #ef4444, #b91c1c)', stripe: 'rgba(255,255,255,0.2)' },
+      { body: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', stripe: 'rgba(255,255,255,0.2)' },
+    ];
+
+    function openPlayerDetailModal(p){
+      currentModalPlayer = p;
+      const modal = document.getElementById('playerDetailModal');
+      if(!modal) return;
+
+      // Populate Header
+      document.getElementById('pmName').textContent = p.name;
+      document.getElementById('pmOvr').textContent = Math.round(p.overall);
+      document.getElementById('pmStars').textContent = p.stars_str || '★★★★☆';
+      document.getElementById('pmAge').textContent = p.age;
+      document.getElementById('pmPos').textContent = p.position;
+      document.getElementById('pmSkill').textContent = p.special_skill || 'Không có';
+      document.getElementById('pmFlag').textContent = p.flag || '🇧🇷';
+      document.getElementById('pmJerseyNum').textContent = p.id ? (p.id % 25 + 1) : 10;
+
+      // Populate Tab 1: Tổng quan
+      document.getElementById('pmWeight').textContent = (p.weight || 78) + ' kg';
+      document.getElementById('pmHeight').textContent = (p.height || 182) + ' cm';
+      document.getElementById('pmFoot').textContent = p.preferred_foot || '🦶 Chân phải';
+      document.getElementById('pmValue').textContent = '💵 ' + (p.market_value >= 1000000 ? (p.market_value/1000000).toFixed(1) + 'M' : (p.market_value/1000).toFixed(0) + 'K');
+      document.getElementById('pmWage').textContent = '💵 ' + (p.salary >= 1000 ? (p.salary/1000).toFixed(0) + 'K' : p.salary);
+      document.getElementById('pmFormPattern').textContent = p.form_pattern || '—';
+
+      // Populate Tab 2: Kỹ năng (Core highlighted with colored bar; Non-core dimmed)
+      document.getElementById('pmDefAvg').textContent = p.def_avg || 65;
+      document.getElementById('pmAtkAvg').textContent = p.atk_avg || 70;
+      document.getElementById('pmPhyAvg').textContent = p.phy_avg || 72;
+
+      renderAttributeList('pmDefList', p.defense || [], 'def');
+      renderAttributeList('pmAtkList', p.attack || [], 'atk');
+      renderAttributeList('pmPhyList', p.physical || [], 'phy');
+
+      // Populate Tab Lối chơi
+      document.getElementById('pmRoleName').textContent = 'Vai trò: ' + (p.position === 'ST' ? 'Sát thủ vòng cấm (Poacher)' : (p.position === 'GK' ? 'Người gác đền (Shot Stopper)' : (p.position.includes('M') ? 'Nhạc trưởng tuyến giữa (Playmaker)' : 'Chốt chặn thép (Stopper)')));
+      document.getElementById('pmTraitsList').innerHTML = `
+        <span class="badge gold">★ ${p.special_skill || 'Chưa mở trait'}</span>
+        <span class="badge warn">★ Chỉ số theo hồ sơ cầu thủ</span>
+        <span class="badge cyan">★ Phong độ ổn định</span>
+      `;
+
+      // Populate Tab 3: Chỉ số (Career Stats Table matching Screenshot 3)
+      renderCareerStatsTable(p.career_stats);
+
+      // Populate Tab 4: Đề nghị (Only for auction listings!)
+      const bidsTabBtn = document.getElementById('pmTabBidsBtn');
+      if(p.source === 'auction'){
+        bidsTabBtn.style.display = 'block';
+        renderBidsTab(p);
+      } else {
+        bidsTabBtn.style.display = 'none';
+      }
+
+      // Default tab to open:
+      // If from auction and user clicked "Chi tiết", open bids or overview
+      const defaultTab = (p.source === 'auction') ? 'bids' : 'overview';
+      switchModalTab(defaultTab);
+
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function renderAttributeList(containerId, attrs, cat){
+      const el = document.getElementById(containerId);
+      if(!el) return;
+      el.innerHTML = '';
+      attrs.forEach(a => {
+        const row = document.createElement('div');
+        row.className = 'pm-attr-row ' + (a.is_core ? ('is-core core-' + cat) : 'non-core');
+        row.innerHTML = `
+          <span class="pm-attr-name">${a.name}</span>
+          <span class="pm-attr-val">${a.val}</span>
+        `;
+        el.appendChild(row);
+      });
+    }
+
+    function renderCareerStatsTable(stats){
+      const tbody = document.getElementById('pmStatsTableBody');
+      if(!tbody || !stats) return;
+      tbody.innerHTML = `
+        <tr>
+          <td><b>Số trận đã đấu:</b> ${stats.career.apps_season}</td>
+          <td><b>Số trận đã đấu:</b> ${stats.league.apps_season}</td>
+          <td><b>Số trận đã đấu:</b> ${stats.cup.apps_season}</td>
+        </tr>
+        <tr>
+          <td><b>Xuất sắc nhất trận:</b> ${stats.career.motm}</td>
+          <td><b>Xuất sắc nhất trận:</b> ${stats.league.motm}</td>
+          <td><b>Xuất sắc nhất trận:</b> ${stats.cup.motm}</td>
+        </tr>
+        <tr>
+          <td><b>Bàn thắng:</b> ${stats.career.goals_season}</td>
+          <td><b>Bàn thắng:</b> ${stats.league.goals_season}</td>
+          <td><b>Bàn thắng:</b> ${stats.cup.goals_season}</td>
+        </tr>
+        <tr>
+          <td><b>Kiến tạo:</b> ${stats.career.assists_season}</td>
+          <td><b>Kiến tạo:</b> ${stats.league.assists_season}</td>
+          <td><b>Kiến tạo:</b> ${stats.cup.assists_season}</td>
+        </tr>
+        <tr>
+          <td><b>Thẻ vàng:</b> ${stats.career.yellows_season}</td>
+          <td><b>Thẻ vàng:</b> ${stats.league.yellows_season}</td>
+          <td><b>Thẻ vàng:</b> ${stats.cup.yellows_season}</td>
+        </tr>
+        <tr>
+          <td><b>Phong độ:</b> <span class="badge muted">${stats.career.form}</span></td>
+          <td><b>Phong độ:</b> <span class="badge muted">${stats.league.form}</span></td>
+          <td><b>Phong độ:</b> <span class="badge muted">${stats.cup.form}</span></td>
+        </tr>
+        <tr>
+          <td><b>Số bàn thắng:</b> ${stats.career.goals_total}</td>
+          <td><b>Số bàn thắng:</b> ${stats.league.goals_total}</td>
+          <td><b>Số bàn thắng:</b> ${stats.cup.goals_total}</td>
+        </tr>
+        <tr>
+          <td><b>Số trận đấu:</b> ${stats.career.apps_total}</td>
+          <td><b>Số trận đấu:</b> ${stats.league.apps_total}</td>
+          <td><b>Số trận đấu:</b> ${stats.cup.apps_total}</td>
+        </tr>
+      `;
+    }
+
+    function renderBidsTab(p){
+      const header = document.getElementById('pmBidsHeader');
+      const list = document.getElementById('pmBidsList');
+      const nextBidEl = document.getElementById('pmNextBid');
+      const form = document.getElementById('pmBidForm');
+
+      form.action = `/bid/${p.id}`;
+
+      // Next proposed bid
+      if(p.currency === 'cash'){
+        const nextCash = p.current_bid + p.bid_step;
+        nextBidEl.textContent = `🪙 1  💵 ${(nextCash/1000000).toFixed(1)}M`;
+      } else {
+        const nextToken = p.current_bid + 1;
+        nextBidEl.textContent = `🪙 ${nextToken}`;
+      }
+
+      const bids = p.recent_bids || [];
+      if(bids.length === 0){
+        header.textContent = 'Người đấu giá: 0';
+        list.innerHTML = `
+          <div class="pm-empty-bids">
+            <div class="pm-empty-placeholder-box"></div>
+            <div class="pm-empty-placeholder-box"></div>
+            <div class="pm-empty-text">Đặt giá đầu tiên!</div>
+          </div>
+        `;
+      } else {
+        header.textContent = `Người đấu giá: ${bids.length}`;
+        let html = '';
+        bids.forEach((b, idx) => {
+          const cashStr = b.cash ? `💵 ${(b.cash/1000000).toFixed(1)}M` : '';
+          const tokStr = b.tokens ? `🪙 ${b.tokens}` : '';
+          html += `
+            <div class="pm-bid-item ${idx === 0 ? 'leader' : ''}">
+              <div class="pm-bidder-avatar">${b.avatar || '👔'}</div>
+              <div class="pm-bidder-info">
+                <div class="pm-bidder-name">${b.user}</div>
+                <div class="pm-bidder-offer">đề xuất ${tokStr} ${cashStr}</div>
+              </div>
+            </div>
+          `;
+        });
+        list.innerHTML = html;
+      }
+    }
+
+    function switchModalTab(tabKey){
+      document.querySelectorAll('.pm-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabKey);
+      });
+      document.querySelectorAll('.pm-tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === ('pmp-' + tabKey));
+      });
+    }
+
+    function closeModal(){
+      const modal = document.getElementById('playerDetailModal');
+      if(modal) modal.style.display = 'none';
+      document.body.style.overflow = '';
+      currentModalPlayer = null;
+    }
+
+    function openModalFromData(el){
+      if(!el || !el.dataset.player) return;
+      try {
+        const data = JSON.parse(el.dataset.player);
+        openPlayerDetailModal(data);
+      } catch(e) {
+        console.error("Failed to parse player data", e);
+      }
+    }
+
+    // Modal Event Listeners
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const modal = document.getElementById('playerDetailModal');
+      const closeBtn = document.getElementById('pmCloseBtn');
+      const swapBtn = document.getElementById('pmJerseySwapBtn');
+
+      if(closeBtn) closeBtn.addEventListener('click', closeModal);
+      if(modal){
+        modal.addEventListener('click', (e)=>{
+          if(e.target === modal) closeModal();
+        });
+      }
+
+      // Tab switcher clicks
+      document.querySelectorAll('.pm-tab-btn').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+          switchModalTab(btn.dataset.tab);
+        });
+      });
+
+      // Jersey Swap
+      if(swapBtn){
+        swapBtn.addEventListener('click', ()=>{
+          jerseyTheme = (jerseyTheme + 1) % jerseyThemes.length;
+          const th = jerseyThemes[jerseyTheme];
+          const graphic = document.getElementById('pmJerseyGraphic');
+          if(graphic){
+            graphic.style.background = th.body;
+          }
+        });
+      }
+    });
   </script>
+
 {% endblock %}
